@@ -24,6 +24,13 @@ public sealed class LightningWindow : Window
                 await browser.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, null));
                 if (closed) return;
                 Browser.MapRequestPolicy.Apply(browser.CoreWebView2, () => browser.CoreWebView2.Source);
+                // Old 403 error tiles can be cached as images in the existing profile.
+                var cacheMigration = Path.Combine(profile, "map-headers-v060");
+                if (!File.Exists(cacheMigration))
+                {
+                    await browser.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.DiskCache);
+                    File.WriteAllText(cacheMigration, "1");
+                }
                 browser.CoreWebView2.NewWindowRequested += (_, e) => e.Handled = true;
                 browser.CoreWebView2.PermissionRequested += (_, e) => e.State = CoreWebView2PermissionState.Deny;
                 browser.CoreWebView2.Navigate(FormattableString.Invariant($"https://www.lightningmaps.org/?lang=de#m=oss;t=3;s=0;z=7;y={place.Latitude};x={place.Longitude};"));
@@ -33,4 +40,3 @@ public sealed class LightningWindow : Window
         Closed += (_, _) => { closed = true; browser.Close(); };
     }
 }
-

@@ -33,4 +33,3 @@
     <Content Include="Assets\Web\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
-

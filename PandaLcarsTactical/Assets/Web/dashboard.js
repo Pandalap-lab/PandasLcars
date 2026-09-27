@@ -335,5 +335,3 @@ setInterval(()=>{
 },2000);
 
 document.addEventListener("keydown",event=>{if(event.key==="F11"){event.preventDefault();send("fullscreen");}else if(event.key==="Escape"&&!document.querySelector("dialog[open]")){event.preventDefault();send("escape");}});
-
-

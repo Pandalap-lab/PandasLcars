@@ -1,4 +1,4 @@
-# PandasLcars 0.5.1
+# PandasLcars 0.6.0
 
 Windows-11-App für x64 mit C# / WinUI 3 und einer lokal eingebundenen WebView2-Oberfläche. Das LCARS-Mockup bleibt die gestalterische Referenz. Seine statischen Bereiche werden aus dem unveränderten Originalbild zusammengesetzt; echte Bedienflächen ersetzen Karte, Uhr, System Status, Navigation, Wetter, Ziele und Feeds. Das Layout nutzt die verfügbare Fensterbreite.
 
@@ -20,7 +20,7 @@ F11 schaltet Vollbild um, Escape verlässt Vollbild, Alt+F4 beendet die App. Die
 
 LightningMaps ist **kein in die Erde eingeblendeter Blitz-Layer**. Der Anbieter untersagt die Einbettung seiner Echtzeitkarte per iframe oder ähnlicher Technik in fremde Webseiten. Die App öffnet daher die unveränderte Originalseite separat. Für einen direkt integrierten Layer wären freigegebene Daten und Nutzungsrechte nötig: https://www.lightningmaps.org/about
 
-Die linke Menüleiste bleibt wie bisher ein statischer Bildbereich. Das U.S.S.-Panda-Raumschiff bleibt optisch erhalten; seine Statuswerte und Quicklaunch sind ab 0.4.0 funktional.
+Die linke Menüleiste behält ihr Bilddesign; ihre Tasten sind ab 0.6.0 angebunden. Details zu Monitorstart, Autostart, Updates und Menüaktionen stehen in der README im Repository-Hauptordner. Das U.S.S.-Panda-Raumschiff bleibt optisch erhalten; seine Statuswerte und Quicklaunch sind ab 0.4.0 funktional.
 
 ## Änderungen 0.3.1
 

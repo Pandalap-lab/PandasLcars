@@ -32,6 +32,8 @@ public sealed partial class MainWindow : Window
     private readonly Settings.DisplaySettings display = new();
     private readonly DispatcherTimer displayTimer = new() { Interval = TimeSpan.FromSeconds(2) };
     private int displayAttempts;
+    private bool awaitingMonitor;
+    private bool initialPresentationApplied;
     private Updates.UpdateRelease? availableUpdate;
     private bool updateBusy;
     public MainWindow()
@@ -56,7 +58,7 @@ public sealed partial class MainWindow : Window
         provider = new OpenMeteoProvider(http);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1500, 980));
         displayTimer.Tick += (_, _) => { if (PlaceOnMonitor() || ++displayAttempts >= 30) displayTimer.Stop(); };
-        displayTimer.Start();
+        awaitingMonitor = !PlaceOnMonitor();
         Closed += (_, _) =>
         {
             closed = true; weatherRequest?.Cancel(); searchRequest?.Cancel();
@@ -69,12 +71,12 @@ public sealed partial class MainWindow : Window
     {
         if (initialized) return;
         initialized = true;
-        if (PlaceOnMonitor()) displayTimer.Stop();
         try
         {
             var profile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "WebView");
             await Dashboard.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, null));
-            var core = Dashboard.CoreWebView2;
+            if (closed) return;
+            var core = Dashboard.CoreWebView2 ?? throw new IOException("Browserprofil ist noch belegt. Alle PandasLcars-Fenster schließen und erneut starten.");
             core.SetVirtualHostNameToFolderMapping("panda.local", Path.Combine(AppContext.BaseDirectory, "Assets"), CoreWebView2HostResourceAccessKind.DenyCors);
             core.Settings.AreDefaultContextMenusEnabled = false;
             core.Settings.IsStatusBarEnabled = false;
@@ -97,14 +99,21 @@ public sealed partial class MainWindow : Window
             core.NavigationCompleted += (_, args) =>
             {
                 StartupStatus.Visibility = args.IsSuccess ? Visibility.Collapsed : Visibility.Visible;
+                if (args.IsSuccess && !initialPresentationApplied)
+                {
+                    initialPresentationApplied = true;
+                    if (display.Fullscreen) AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+                }
                 if(args.IsSuccess) Dashboard.Focus(FocusState.Programmatic);
                 if (!args.IsSuccess) StartupStatus.Text = "Ansicht konnte nicht geladen werden. Bitte App neu starten.";
             };
             core.Navigate(Origin + "/Web/index.html");
+            if (awaitingMonitor) displayTimer.Start();
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            StartupStatus.Text = "WebView2 konnte nicht starten. Microsoft Edge WebView2 Runtime installieren und erneut starten.";
+            StartupStatus.Text = "WebView2 konnte nicht starten (" + ex.HResult.ToString("X8") + "). " + ex.Message + "\nPandasLcars schließen und erneut starten.";
+            try { Settings.AtomicFile.Write(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "startup-error.txt"), ex.ToString()); } catch { }
         }
     }
     private void Send(object payload)
@@ -403,9 +412,3 @@ public sealed partial class MainWindow : Window
         finally { password.Password = ""; settingsOpen = false; }
     }
 }
-
-
-
-
-
-

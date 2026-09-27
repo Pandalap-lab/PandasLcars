@@ -121,5 +121,3 @@ Console.WriteLine("All weather, radar, system, quicklaunch and activity tests pa
 sealed class FixtureHandler(string data):HttpMessageHandler {
  protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){token.ThrowIfCancellationRequested();return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(data)});}
 }
-
-
