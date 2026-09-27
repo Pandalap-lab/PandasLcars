@@ -68,8 +68,10 @@ const server=http.createServer((req,res)=>{
   console.log('PASS all three status renderings');
   const before=await page.evaluate(()=>viewer.camera.positionCartographic.height);
   await page.locator('#globe').hover({position:{x:200,y:160}});await page.mouse.wheel(0,-120);
+  // A browser wheel dispatch may return before its event is handled on CI.
+  await page.waitForFunction(previous=>viewer.camera.positionCartographic.height < previous, before);
   await page.waitForFunction(()=>zoomTarget===null);
-  const after=await page.evaluate(()=>viewer.camera.positionCartographic.height);assert(after<before&&after/before>.95);console.log('PASS real Cesium wheel <5% height change');
+  const after=await page.evaluate(()=>viewer.camera.positionCartographic.height);assert(after<before&&after/before>.95, 'wheel height before='+before+' after='+after);console.log('PASS real Cesium wheel <5% height change');
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=0);
   const shot=path.resolve(__dirname,'../../qa');fs.mkdirSync(shot,{recursive:true});
   await page.screenshot({path:path.join(shot,'dashboard-1500.png')});
