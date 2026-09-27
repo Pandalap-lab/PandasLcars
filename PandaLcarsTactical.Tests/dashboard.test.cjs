@@ -57,7 +57,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#closeAppSettings').click();
   assert(!(await page.locator('#appSettings').evaluate(el=>el.open)));
   console.log('PASS services settings, truthful status, remove and return');
-  for(const action of ['tactical','system','maps','data','photos','calendar','desktop','power']) {
+  for(const action of ['tactical','system','maps','web','data','photos','calendar','desktop','power']) {
    await page.locator('[data-action="'+action+'"]').click();
    assert(await page.evaluate(action=>testSent.some(x=>x.type==='menu'&&x.action===action),action));
   }

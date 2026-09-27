@@ -1,5 +1,7 @@
 # 0.6.0 – Monitorstart und Bedienung
 
+- 04 WEB öffnet Firefox; 07 OUTLOOK ersetzt CALENDAR bei unverändertem Kalenderlink.
+- Quicklaunch-Icons auf 16 × 16 Pixel begrenzt; Installationstest für entfernten Autostart-Eintrag korrigiert.
 - Persistente Bildschirmwahl, Vollbild, Windows-Autostart, Hauptmonitor-Fallback.
 - Updateprüfung und geprüfter Installer-Download über vorhandene obere Tasten.
 - LCARS-Navigation mit Kompass wiederhergestellt; Menüaktionen angebunden.

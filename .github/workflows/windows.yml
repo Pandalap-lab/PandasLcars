@@ -71,7 +71,8 @@ jobs:
           if ($uninstall.ExitCode -ne 0) { throw 'Uninstall failed' }
           if (Test-Path (Join-Path $appDir 'PandasLcars.exe')) { throw 'App was not removed' }
           if ((Get-Content $sentinel) -ne 'keep-personal-settings') { throw 'Uninstall removed user settings' }
-          if (Get-ItemPropertyValue $runKey PandasLcars -ErrorAction SilentlyContinue) { throw 'Uninstall left autostart behind' }
+          $remaining = Get-ItemProperty $runKey -ErrorAction SilentlyContinue
+          if ($remaining -and $remaining.PSObject.Properties.Name -contains 'PandasLcars') { throw 'Uninstall left autostart behind' }
       - uses: actions/upload-artifact@v4
         with:
           name: PandasLcars-Windows-x64

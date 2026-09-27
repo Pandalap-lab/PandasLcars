@@ -44,6 +44,18 @@ function drawArtwork(){
   const image=document.createElementNS("http://www.w3.org/2000/svg","image");
   image.setAttribute("href","../tactical-reference.png");image.setAttribute("width","1536");image.setAttribute("height","1024");
   svg.append(image);host.prepend(svg);
+  if (host.classList.contains("navigation")) {
+   for (const [y,color,title,subtitle] of [[281,"#ed789a","WEB","FIREFOX"],[476,"#a68be9","OUTLOOK","KALENDER · E-MAIL"]]) {
+    const cover=document.createElementNS(svg.namespaceURI,"rect");
+    for(const [k,v] of Object.entries({x:72,y:y-7,width:166,height:59,rx:5,fill:color})) cover.setAttribute(k,v);
+    svg.append(cover);
+    for(const [offset,text,size] of [[22,title,23],[41,subtitle,14]]) {
+     const label=document.createElementNS(svg.namespaceURI,"text");
+     for(const [k,v] of Object.entries({x:83,y:y+offset,fill:"black","font-family":"Lcars, Arial Narrow, sans-serif","font-size":size,"font-weight":offset===22?700:400,textLength:offset===22?(title==="WEB"?43:91):(title==="WEB"?53:132),lengthAdjust:"spacingAndGlyphs"})) label.setAttribute(k,v);
+     label.textContent=text; svg.append(label);
+    }
+   }
+  }
   // Replace lettering in SVG coordinates, leaving the original artwork untouched.
   const labels = host.classList.contains("insignia") ? [[27,863,91,24,"NCC-080470",16]] : host.classList.contains("ship") ? [[522,768,101,22,"NCC-080470",17]] : [];
   for (const [x,y,w,h,text,size] of labels) {

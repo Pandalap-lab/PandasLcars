@@ -284,6 +284,7 @@ public sealed partial class MainWindow : Window
         {
             case "tactical": CloseTactical(); break;
             case "system": await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:")); break;
+            case "web": FirefoxLauncher.OpenHome(); break;
             case "maps":
                 var targetPlace = message.GetProperty("place").Deserialize<GeoPlace>(Json) ?? GeoPlace.Vienna;
                 targetPlace.Validate();

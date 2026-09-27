@@ -7,7 +7,6 @@
  for (const button of document.querySelectorAll("[data-action]")) {
   button.title = button.getAttribute("aria-label");
   button.onclick = () => {
-   if (button.dataset.action === "communication") { eventFeed("04 Communication: noch nicht zugeordnet."); return; }
    send("menu", {action:button.dataset.action, place});
   };
  }

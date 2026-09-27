@@ -1,6 +1,7 @@
 # Noch offene Integrationen
 
 ## v0.6.0 umgesetzt
+- Menü 04 WEB öffnet Firefox; 07 OUTLOOK öffnet weiterhin Outlook-Kalender (Kalender/E-Mail).
 - Monitorwahl mit dauerhaft gespeicherter Gerätekennung, Vollbild und Hauptmonitor-Fallback; eine Minute Erkennung beim Start.
 - Autostart als Installer-Option und in Settings.
 - Update-Tasten: GitHub-Release prüfen, Installer laden, SHA-256 prüfen, Installation ausdrücklich bestätigen.
@@ -13,6 +14,11 @@
 
 ## Externe Voraussetzungen / offen
 - Echte OAuth-Kontoanbindung: eigene Google-/Microsoft-Client-IDs und passende Desktop-Appregistrierungen erforderlich; derzeit nicht vorhanden/verifiziert. Browseranmeldungen bleiben ausdrücklich ungeprüft.
-- Menü 04 Communication: vom Nutzer noch keine Aktion festgelegt.
 - Signierung: kein kostenpflichtiger Dienst und keine Store-Veröffentlichung gewünscht. Installer bleibt unsigniert.
 - Ein vollständiger Windows-Neustart und Prüfung während der Anmeldung ist separat nötig.
+
+## Vom Nutzer geprüft (27.09.2026)
+- 02 System: Windows-Einstellungen, 03 Navigation: Maps, 05 Data: Explorer, 06 Media: Google Fotos erfolgreich.
+- 07 Outlook-Kalender öffnet erfolgreich in Firefox.
+- 10 Power: Menü scheint korrekt; Neustart/Herunterfahren nicht ausgeführt.
+- Norton-Prüfung auf Wunsch zurückgestellt bis eine neue Meldung mit Dateidetails vorliegt.

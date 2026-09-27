@@ -6,6 +6,11 @@ namespace PandaLcarsTactical.Browser;
 
 public static class FirefoxLauncher
 {
+    public static void OpenHome()
+    {
+        var executable = Find() ?? throw new InvalidOperationException("Firefox nicht gefunden. Bitte Firefox installieren.");
+        Process.Start(new ProcessStartInfo(executable) { UseShellExecute = false });
+    }
     public static string? Find()
     {
         foreach (var hive in new[] { RegistryHive.CurrentUser, RegistryHive.LocalMachine })
