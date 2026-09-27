@@ -10,7 +10,7 @@ const server=http.createServer((req,res)=>{
 });
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true,channel:'msedge'});
+ const browser=await chromium.launch({headless:true,channel:'msedge',args:process.env.CI ? ['--use-angle=swiftshader','--enable-unsafe-swiftshader'] : []});
  try {
   const context=await browser.newContext({viewport:{width:1500,height:940}}),page=await context.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -66,6 +66,8 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#shipMode').innerText(),mode);
   }
   console.log('PASS all three status renderings');
+  await page.screenshot({path:path.resolve(__dirname,'../../qa/before-zoom.png')});
+  console.log('Zoom target diagnostics', await page.locator('#globe').evaluate(el=>{const r=el.getBoundingClientRect();const target=document.elementFromPoint(r.left+200,r.top+160);return {tag:target?.tagName,css:target?.className,text:document.querySelector('.cesium-widget-errorPanel')?.textContent};}));
   const before=await page.evaluate(()=>viewer.camera.positionCartographic.height);
   await page.locator('#globe').hover({position:{x:200,y:160}});await page.mouse.wheel(0,-120);
   // A browser wheel dispatch may return before its event is handled on CI.
