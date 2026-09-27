@@ -1,0 +1,19 @@
+PANDA LCARS Tactical 0.4.0 – Windows x64
+
+PandaLcarsTactical.exe starten. Alle Dateien dieses Ordners zusammenlassen.
+.NET und Windows App SDK sind enthalten. Microsoft Edge WebView2 Runtime
+muss installiert sein (unter Windows 11 normalerweise vorhanden).
+
+QUICK LAUNCH: Website in der Tactical-Ansicht öffnen.
+HAUPTANSICHT: zurück zum Dashboard. IN FIREFOX ÖFFNEN: optional extern.
++ WEITERE: eigenen Link hinzufügen. Zahnrad: eigene Links bearbeiten/löschen.
+Mehr als acht Links: im Quicklaunch-Bereich scrollen.
+
+Mausrad: sanfter Kartenzoom. CENTER/EARTH/TRACK wie bisher.
+F11: Vollbild. Escape: Webansicht schließen bzw. Vollbild verlassen.
+WORK: Eingabe aktiv. STANDBY: drei Minuten inaktiv.
+WARP: hohe Auslastung oder manueller Schalter, kein Übertakten.
+
+Wetter, Systemwerte und Ziele bleiben erhalten. Neues Panda-Spitzohren-Icon.
+Benutzerdaten bleiben unter LOCALAPPDATA\PandaLcarsTactical gespeichert.
+Noch kein automatischer Updater. Details und Prüfungen: README.md / docs.

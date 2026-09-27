@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://tilecache.rainviewer.com; connect-src 'self' https://tile.openstreetmap.org https://tilecache.rainviewer.com; worker-src 'self' blob:; object-src 'none'; frame-src 'none'">
+<title>PandasLcars</title><link rel="stylesheet" href="Cesium/Widgets/widgets.css"><link rel="stylesheet" href="dashboard.css">
+<script src="Cesium/Cesium.js" defer></script><script src="zoom.js" defer></script><script src="dashboard.js" defer></script><script src="quicklaunch.js" defer></script><script src="settings.js" defer></script></head>
+<body>
+<div class="dashboard">
+<header class="top"><div class="art" data-crop="0 0 1536 76"></div><div class="app-brand">PandasLcars<small>TACTICAL</small></div><div class="clock"><span id="date"></span><strong id="clock"></strong></div></header>
+<aside class="navigation art" data-crop="16 81 225 643" aria-label="LCARS-Navigation"><button id="openAppSettings" aria-label="09 Settings – PandasLcars Einstellungen" title="PandasLcars Einstellungen"></button></aside>
+<main class="tactical panel">
+ <div class="tactical-title"><div><h1>TACTICAL SITUATION</h1><span>GLOBAL VIEW &nbsp; // &nbsp; LIVE WEATHER &nbsp; // &nbsp; PANDA</span></div><div class="sector"><small>SECTOR EARTH</small><b id="sectorName">WIEN, ÖSTERREICH</b></div></div>
+ <div class="map-wrap"><div id="globe" aria-label="Interaktive Weltkugel"></div>
+  <div id="mapError" class="map-error" hidden>Karte konnte nicht gestartet werden. WebGL und WebView2 prüfen.</div>
+  <div class="map-hud" id="mapHud"><b id="hudName">WIEN</b><span id="hudCoordinates"></span><span id="hudWeather">Wetter-Layer OFF</span></div>
+  <div class="map-controls" aria-label="Kartensteuerung">
+   <button id="zoomIn" title="Näher heranzoomen">⊕ &nbsp; ZOOM +</button><button id="zoomOut" title="Weiter herauszoomen">⊖ &nbsp; ZOOM −</button>
+   <button id="track" aria-pressed="false" title="Kamera am gewählten Ort halten">◎ &nbsp; TRACK</button><button id="center" title="Gewählten Ort aus der Nähe anzeigen">▣ &nbsp; CENTER</button>
+   <button id="sensors" aria-pressed="true" title="Koordinaten und Ortsinformationen anzeigen">◇ &nbsp; SENSORS</button><button id="layers" aria-pressed="true" title="Wetter-Layer-Auswahl anzeigen">▱ &nbsp; LAYERS</button>
+   <button id="earth" title="Gesamte Weltkugel anzeigen">◉ &nbsp; EARTH</button>
+  </div>
+  <div class="map-scale" id="mapScale">3D-GLOBUS</div>
+ </div>
+ <section class="weather-dock" aria-label="Wettersteuerung">
+  <div class="weather-top"><h2>WETTER <span id="weatherPlace">WIEN</span></h2>
+   <div class="switch-group" role="group" aria-label="Wetter-Layer"><span>LAYER</span><button id="weatherOn" aria-pressed="false">ON</button><button id="weatherOff" aria-pressed="true">OFF</button></div>
+   <button id="refresh" title="Wetter und Vorhersage aktualisieren">↻</button><button id="settings" title="Wetter-API konfigurieren">⚙</button>
+  </div>
+  <div class="weather-body"><div class="weather-reading"><strong id="temperature">— °C</strong><span id="weatherDetails">Aktuelle Werte werden geladen …</span></div>
+   <div class="weather-layers" id="layerTray"><button id="radar" aria-pressed="false" title="Regenradar von RainViewer ein-/ausblenden">RADAR</button><button id="clouds" aria-pressed="false">WOLKEN</button><button id="rain" aria-pressed="false">NIEDERSCHLAG</button><button id="heat" aria-pressed="true">TEMPERATUR</button>
+    <div class="switch-group lightning-switch" role="group" aria-label="LightningMaps Live-Fenster"><span>BLITZE ↗</span><button id="lightningOn" aria-pressed="false">ON</button><button id="lightningOff" aria-pressed="true">OFF</button></div>
+   </div>
+  </div><div id="radarStatus" class="radar-status" hidden></div><div class="weather-status"><span id="weatherStatus" role="status">Wetterdaten werden geladen …</span><small><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo · CC BY 4.0</a></small></div>
+ </section>
+</main>
+<aside class="right">
+ <section class="system panel" aria-label="Aktueller Windows-Systemstatus"><h2>SYSTEM STATUS</h2><div class="system-rows">
+<div class="system-row"><span>CPU</span><progress id="cpuBar" max="100" value="0" aria-label="CPU-Auslastung"></progress><output id="cpuValue">—</output></div>
+<div class="system-row"><span>RAM</span><progress id="ramBar" max="100" value="0" aria-label="RAM belegt"></progress><output id="ramValue">—</output></div>
+<div class="system-row"><span id="diskName">DISK</span><progress id="diskBar" max="100" value="0" aria-label="Systemlaufwerk belegt"></progress><output id="diskValue">—</output></div>
+<div class="system-row"><span>GPU</span><progress id="gpuBar" max="100" value="0" aria-label="GPU-Auslastung"></progress><output id="gpuValue">—</output></div>
+<div class="system-row network-row"><span>NETZ</span><output id="networkValue">Messung …</output></div>
+<div class="system-row"><span>AKKU</span><progress id="batteryBar" max="100" value="0" aria-label="Akkustand"></progress><output id="batteryValue">—</output></div>
+</div><small id="systemStatus">Windows-Messwerte werden geladen …</small></section>
+ <section class="panel location"><h2>NAVIGATION</h2><div class="location-body"><div><strong id="locationName">WIEN, ÖSTERREICH</strong><span id="locationCoords"></span><small id="locationDistance">Startposition Wien</small></div><div class="compass">N<span>▲</span>S</div></div></section>
+ <section class="panel forecast"><h2>WEATHER · 3 TAGE</h2><div class="forecast-location" id="forecastPlace">Wien · Ortszeit</div><div id="forecastRows" aria-live="polite"><p>Vorhersage wird geladen …</p></div><small id="forecastStatus"></small></section>
+</aside>
+<div class="insignia art" data-crop="24 736 119 213" aria-label="U.S.S. Panda, statisches Emblem"></div>
+<div class="bottom">
+ <section class="panel feeds"><h2>TACTICAL FEEDS <button id="clearFeeds" title="Ereignisliste leeren">LEEREN</button></h2><ol id="feeds" aria-live="polite"></ol></section>
+ <div class="ship art" data-crop="511 737 418 213" aria-label="U.S.S. Panda mit Live-Aktivitätsstatus">
+  <div class="ship-live" title="WORK: Eingabe aktiv. STANDBY: 3 Minuten inaktiv. WARP: manuell oder 10 Sekunden hohe CPU/GPU-Auslastung. Keine Änderung der Windows-Leistung.">
+   <div><span>MODE</span><b id="shipMode">WORK</b></div>
+   <div><span>LOAD</span><output id="shipLoad">—</output></div>
+   <div><span>IDLE</span><output id="shipIdle">0 s</output></div>
+   <div><span>SINCE</span><output id="shipSince">—</output></div>
+   <button id="warp" aria-pressed="false" title="WARP manuell einschalten; bei STANDBY automatisch aus">WARP</button>
+  </div>
+ </div>
+ <section class="panel targets"><h2>TARGETS / DESTINATIONS</h2><form id="searchForm"><input id="search" type="search" placeholder="Ort suchen …" aria-label="Ort suchen" minlength="2" maxlength="100"><button type="submit" title="Ort suchen">⌕</button></form><small id="searchStatus" role="status">Ziel wählen · Entfernung ab Wien</small><div id="destinations"></div></section>
+ <section class="quick panel" aria-label="Quicklaunch"><h2>QUICK LAUNCH <button id="manageLinks" title="Eigene Links bearbeiten oder löschen" aria-label="Eigene Links verwalten">⚙</button></h2><div id="quickLinks" aria-label="Webseiten, maximal acht gleichzeitig sichtbar" tabindex="0"></div><button id="addLink">+ WEITERE</button></section>
+</div>
+<footer><span>PandasLcars v0.5.0 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Persönliche Dienste und Anmeldestatus">DIENSTE · NICHT EINGERICHTET</button></footer>
+</div>
+<dialog id="linkDialog" aria-labelledby="linkDialogTitle"><form id="linkForm">
+ <h2 id="linkDialogTitle">QUICK LAUNCH · LINK HINZUFÜGEN</h2>
+ <label>Name<input id="linkName" required maxlength="48" autocomplete="off"></label>
+ <label>Webadresse<input id="linkUrl" required maxlength="2048" placeholder="https://…" autocomplete="off" inputmode="url"></label>
+ <p id="linkError" role="alert"></p>
+ <div class="dialog-actions"><button type="button" id="cancelLink">ABBRECHEN</button><button type="submit" id="saveLink">SPEICHERN</button></div>
+ </form></dialog>
+<dialog id="manageDialog" aria-labelledby="manageTitle"><h2 id="manageTitle">EIGENE LINKS</h2><div id="customLinks"></div><p id="manageError" role="alert"></p><button id="closeManage">SCHLIESSEN</button></dialog>
+<dialog id="appSettings" aria-labelledby="appSettingsTitle">
+<h2 id="appSettingsTitle">PandasLcars · SETTINGS</h2>
+<p>Persönliche Dienste</p>
+<p>Anmeldung direkt bei Google, Microsoft oder Facebook im Browser (Firefox bevorzugt). Jeder Windows-Benutzer verwendet seine eigenen Konten.</p>
+<div id="serviceRows"></div><p id="serviceWarning" role="alert"></p>
+<p>Der Anmeldestatus des externen Browsers kann hier nicht geprüft werden. „Im Browser“ bestätigt nur die Einrichtung des Zugangs. Passwörter, Kalender und Fotos werden nicht nach GitHub übertragen.</p>
+<p>„Zuordnung entfernen“ entfernt nur den lokalen Zugang aus PandasLcars. Zum Abmelden den jeweiligen Dienst im Browser öffnen und dort abmelden.</p>
+<div class="dialog-actions"><button id="weatherSettings">WETTER-ZUGANG</button><button id="closeAppSettings">ZURÜCK ZU TACTICAL</button></div>
+</dialog>
+</body></html>
+
+
+
+

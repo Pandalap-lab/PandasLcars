@@ -1,0 +1,61 @@
+name: PandasLcars Windows
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Test core behavior
+        run: dotnet run --project PandaLcarsTactical.Tests -c Release
+      - name: Test zoom
+        run: node PandaLcarsTactical.Tests/zoom.test.cjs
+      - name: Build Windows x64
+        run: dotnet publish PandaLcarsTactical/PandaLcarsTactical.csproj -c Release -p:Platform=x64 -o artifacts/app
+      - name: Package installer and portable app
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = ([xml](Get-Content PandaLcarsTactical/PandaLcarsTactical.csproj)).Project.PropertyGroup.Version
+          if ('${{ github.ref_type }}' -eq 'tag' -and '${{ github.ref_name }}' -ne "v$version") { throw 'Tag and app version must match.' }
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $compiler)) { choco install innosetup --yes --no-progress; if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' } }
+          & $compiler "/DAppVersion=$version" installer/PandasLcars.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          Compress-Archive artifacts/app/* artifacts/PandasLcars-Windows-x64.zip
+          Get-FileHash artifacts/PandasLcars-Setup.exe,artifacts/PandasLcars-Windows-x64.zip -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } | Set-Content artifacts/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PandasLcars-Windows-x64
+          path: |
+            artifacts/PandasLcars-Setup.exe
+            artifacts/PandasLcars-Windows-x64.zip
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: PandasLcars-Windows-x64
+          path: artifacts
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" artifacts/* --verify-tag --title "PandasLcars $TAG" --generate-notes

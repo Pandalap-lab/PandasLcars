@@ -1,0 +1,18 @@
+**/bin/
+**/obj/
+**/dist/
+artifacts/
+.vs/
+*.user
+*.key
+*.pfx
+*.p12
+.env*
+**/WebView/
+**/TacticalBrowser/
+**/LightningBrowser/
+**/quicklaunch.json
+**/services.json
+**/appsettings.local.json
+# Historical personal planning material is not part of the public source.
+PandaLcarsTactical/docs/TODO-NEXT-UPDATE.md

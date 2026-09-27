@@ -1,0 +1,90 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
+const assets=path.resolve(__dirname,'../PandaLcarsTactical/Assets');
+const server=http.createServer((req,res)=>{
+ const file=path.resolve(assets,'.'+decodeURIComponent(req.url.split('?')[0]));
+ if(!file.startsWith(assets+path.sep)){res.writeHead(403).end();return;}
+ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.json':'application/json','.wasm':'application/wasm'};
+ res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');
+ fs.createReadStream(file).on('error',()=>res.end()).pipe(res);
+});
+(async()=>{
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const browser=await chromium.launch({headless:true,channel:'msedge'});
+ try {
+  const context=await browser.newContext({viewport:{width:1500,height:940}}),page=await context.newPage();
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.route('**/*',route=>route.request().url().startsWith('http://127.0.0.1:')?route.continue():route.abort());
+  await page.addInitScript(()=>{
+   const listeners=[];
+   window.testLinks=['Kronen Zeitung','DER STANDARD','Heute','Facebook','OE24',...Array.from({length:7},(_,i)=>'Eigener Link '+(i+1))].map((name,i)=>({id:String(i),name,url:'https://example.com/'+i,custom:i>=5}));
+   window.testMessage=data=>listeners.forEach(fn=>fn({data}));
+   window.testSent=[];
+   window.chrome={webview:{addEventListener:(name,fn)=>listeners.push(fn),postMessage:msg=>{
+    window.testSent.push(msg);
+    if(msg.type==='services')setTimeout(()=>window.testMessage({type:'services',data:[{id:'photos',name:'Google Fotos',enabled:false,status:'NICHT EINGERICHTET'}]}),10);
+    if(msg.type==='links')setTimeout(()=>window.testMessage({type:'links',data:window.testLinks}),10);
+    if(msg.type==='linkSave'){
+     const link={id:msg.linkId??'new',name:msg.name,url:msg.url,custom:true};
+     window.testLinks=msg.linkId?window.testLinks.map(x=>x.id===msg.linkId?link:x):[...window.testLinks,link];
+     setTimeout(()=>window.testMessage({type:'links',id:msg.id,data:window.testLinks}),10);
+    }
+    if(msg.type==='linkDelete'){
+     window.testLinks=window.testLinks.filter(x=>x.id!==msg.linkId);
+     setTimeout(()=>window.testMessage({type:'links',id:msg.id,data:window.testLinks}),10);
+    }
+   }}};
+  });
+  await page.goto('http://127.0.0.1:'+server.address().port+'/Web/index.html');
+  await page.waitForFunction(()=>document.querySelectorAll('#quickLinks button').length===12);
+  await page.waitForFunction(()=>typeof viewer!=='undefined'&&viewer.imageryLayers.length>=2);
+  const visible=()=>page.evaluate(()=>{const r=document.querySelector('#quickLinks').getBoundingClientRect();return [...document.querySelectorAll('#quickLinks button')].filter(b=>{const q=b.getBoundingClientRect();return q.top>=r.top-1&&q.bottom<=r.bottom+1}).length;});
+  await page.locator('#serviceSummary').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.service-row').length===1);
+  await page.getByRole('button',{name:'IM BROWSER EINRICHTEN',exact:true}).click();
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='serviceOpen'&&x.serviceId==='photos')));
+  await page.evaluate(()=>testMessage({type:'services',data:[{id:'photos',name:'Google Fotos',enabled:true,status:'IM BROWSER · STATUS UNBEKANNT'}]}));
+  assert((await page.locator('#serviceSummary').innerText()).includes('STATUS ?'));
+  await page.getByRole('button',{name:'ZUORDNUNG ENTFERNEN',exact:true}).click();
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='serviceRemove'&&x.serviceId==='photos')));
+  await page.locator('#closeAppSettings').click();
+  assert(!(await page.locator('#appSettings').evaluate(el=>el.open)));
+  console.log('PASS services settings, truthful status, remove and return');
+  assert.equal(await visible(),8);console.log('PASS exactly eight visible quicklaunch tiles');
+  await page.locator('#quickLinks').evaluate(el=>el.scrollTop=el.scrollHeight);
+  assert(await page.locator('#quickLinks').evaluate(el=>el.scrollTop>0));assert.equal(await visible(),8);
+  await page.getByRole('button',{name:'Eigener Link 7 in Tactical öffnen',exact:true}).click();
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='linkOpen'&&x.linkId==='11')));console.log('PASS scroll and open last link');
+  await page.locator('#addLink').click();await page.locator('#linkName').fill('Neu');await page.locator('#linkUrl').fill('https://example.org/');await page.locator('#saveLink').click();
+  await page.waitForFunction(()=>!document.querySelector('#linkDialog').open);assert.equal(await page.locator('#quickLinks button').count(),13);
+  await page.locator('#manageLinks').click();await page.locator('.manage-row').last().getByText('BEARBEITEN',{exact:true}).click();await page.locator('#linkName').fill('Geändert');await page.locator('#saveLink').click();await page.waitForFunction(()=>!document.querySelector('#linkDialog').open);
+  await page.locator('#manageLinks').click();await page.locator('.manage-row').last().getByText('LÖSCHEN',{exact:true}).click();await page.locator('.manage-row').last().getByText('WIRKLICH LÖSCHEN?',{exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#quickLinks button').length===12);await page.locator('#closeManage').click();console.log('PASS add, edit, delete dialog wiring');
+  for(const mode of ['WORK','STANDBY','WARP']){
+   await page.evaluate(mode=>testMessage({type:'activity',data:{mode,since:new Date().toISOString(),idleSeconds:mode==='STANDBY'?180:0,load:22,warpRequested:mode==='WARP'}}),mode);
+   assert.equal(await page.locator('#shipMode').innerText(),mode);
+  }
+  console.log('PASS all three status renderings');
+  const before=await page.evaluate(()=>viewer.camera.positionCartographic.height);
+  await page.locator('#globe').hover({position:{x:200,y:160}});await page.mouse.wheel(0,-120);
+  await page.waitForFunction(()=>zoomTarget===null);
+  const after=await page.evaluate(()=>viewer.camera.positionCartographic.height);assert(after<before&&after/before>.95);console.log('PASS real Cesium wheel <5% height change');
+  await page.locator('#quickLinks').evaluate(el=>el.scrollTop=0);
+  const shot=path.resolve(__dirname,'../../qa');fs.mkdirSync(shot,{recursive:true});
+  await page.screenshot({path:path.join(shot,'dashboard-1500.png')});
+  for(const [width,height] of [[1200,740],[950,590],[1920,1080]]){
+   await page.setViewportSize({width,height});await page.waitForTimeout(100);
+   assert.equal(await visible(),8);
+   assert(await page.locator('#quickLinks').evaluate(el=>el.clientHeight>0));
+  }
+  console.log('PASS eight-tile layout at 950x590, 1200x740, 1500x940 and 1920x1080');
+  await page.screenshot({path:path.join(shot,'dashboard-1920.png')});
+  const touch=await browser.newContext({viewport:{width:950,height:590},hasTouch:true});
+  const touchPage=await touch.newPage();
+  await touchPage.goto('http://127.0.0.1:'+server.address().port+'/Web/index.html');
+  await touchPage.waitForFunction(()=>document.querySelector('#quickLinks').style.getPropertyValue('--quick-row'));
+  const touchBounds=await touchPage.locator('.quick').boundingBox(),footerBounds=await touchPage.locator('footer').boundingBox();
+  assert(touchBounds.y+touchBounds.height<=footerBounds.y);console.log('PASS compact touch layout avoids footer overlap');
+  await touch.close();
+  assert.deepEqual(errors,[]);console.log('PASS no JavaScript runtime errors');
+ } finally { await browser.close(); server.close(); }
+})().catch(e=>{console.error(e);server.close();process.exitCode=1;});

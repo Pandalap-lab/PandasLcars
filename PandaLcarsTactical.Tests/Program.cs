@@ -1,0 +1,103 @@
+using System.Net;
+using System.Text.Json;
+using PandaLcarsTactical.Weather;
+
+var fixture = """
+{"utc_offset_seconds":7200,"timezone":"Europe/Vienna","current":{"time":"2026-09-25T12:30","interval":900,"temperature_2m":16.5,"relative_humidity_2m":50,"precipitation":0,"cloud_cover":80,"pressure_msl":1020,"wind_speed_10m":10},"daily":{"time":["2026-09-25","2026-09-26","2026-09-27"],"temperature_2m_min":[10,11,12],"temperature_2m_max":[20,21,22],"weather_code":[0,3,61]}}
+""";
+void Check(bool ok,string label) { if(!ok)throw new Exception(label); Console.WriteLine("PASS " + label); }
+WeatherReport Parse(string json) { using var d=JsonDocument.Parse(json); return OpenMeteoProvider.Parse(d.RootElement,GeoPlace.Vienna); }
+var r=Parse(fixture);
+Check(r.Current.ValidAt.UtcDateTime.Hour==10 && r.Current.ValidAt.Minute==30,"Local API timestamp converted to UTC");
+Check(r.Daily.Count==3 && r.Daily[2].Date==new DateOnly(2026,9,27),"Three local forecast dates preserved");
+Check(r.Current.IntervalMinutes==15,"Precipitation interval retained");
+foreach(var invalid in new[]{fixture.Replace("16.5","null"),fixture.Replace("[20,21,22]","[20]"),fixture.Replace("[20,21,22]","[0,21,22]"),fixture.Replace("2026-09-27","2026-09-29")}) {
+ bool rejected=false;try{Parse(invalid);}catch{rejected=true;}Check(rejected,"Invalid or incomplete forecast rejected");
+}
+bool coordinatesRejected=false;try{new GeoPlace("test",double.NaN,0).Validate();}catch(ArgumentException){coordinatesRejected=true;}Check(coordinatesRejected,"NaN coordinates rejected");
+using var client=new HttpClient(new FixtureHandler(fixture));
+var liveShape=await new OpenMeteoProvider(client).GetAsync(new GeoPlace("Berlin",52.52,13.405),CancellationToken.None);
+Check(liveShape.Place.Name=="Berlin","Selected destination retained");
+using var canceled=new CancellationTokenSource();canceled.Cancel();bool canceledOk=false;
+try{await new OpenMeteoProvider(client).GetAsync(GeoPlace.Vienna,canceled.Token);}catch(OperationCanceledException){canceledOk=true;}Check(canceledOk,"Canceled request cannot return data");
+var radarNow=DateTimeOffset.UtcNow;
+string RadarJson(string host,long time,string? path=null)=>JsonSerializer.Serialize(new {host,radar=new {past=new[]{new {time,path=path??("/v2/radar/"+time)}}}});
+RadarFrame Radar(string json){using var doc=JsonDocument.Parse(json);return RainViewerProvider.Parse(doc.RootElement,radarNow);}
+var validRadar=RadarJson("https://tilecache.rainviewer.com",radarNow.AddMinutes(-10).ToUnixTimeSeconds());
+Check(Radar(RadarJson("https://tilecache.rainviewer.com",radarNow.AddMinutes(-10).ToUnixTimeSeconds(),"/v2/radar/461ca2a5948c")).Url.Contains("461ca2a5948c"),"Live opaque radar frame IDs supported");
+Check(Radar(validRadar).Url.Contains("/{z}/{x}/{y}/2/1_0.png"),"Radar URL uses bounded tile format");
+foreach(var invalid in new[]{RadarJson("https://example.com",radarNow.ToUnixTimeSeconds()),RadarJson("https://tilecache.rainviewer.com",radarNow.AddHours(-2).ToUnixTimeSeconds()),RadarJson("https://tilecache.rainviewer.com",radarNow.ToUnixTimeSeconds(),"/v2/radar/../../secret"),RadarJson("https://tilecache.rainviewer.com",radarNow.AddHours(1).ToUnixTimeSeconds())}){
+ bool rejected=false;try{Radar(invalid);}catch{rejected=true;}Check(rejected,"Untrusted/stale/future radar rejected");
+}
+if(OperatingSystem.IsWindows()){
+ using var monitor=new PandaLcarsTactical.SystemInfo.SystemMonitor();
+ var initial=monitor.Read();await Task.Delay(2100);var measured=monitor.Read();
+ Check(initial.Cpu is null,"CPU first interval is unavailable, not fabricated");
+ Check(measured.Cpu is >=0 and <=100 && measured.Ram is >0 and <=100 && measured.Disk is >=0 and <=100,"Live Windows CPU/memory/disk counters return valid values");
+ Check(measured.DownloadMbps is >=0 && measured.UploadMbps is >=0,"Network rates use elapsed interval");
+ Check(measured.Gpu is null or >=0 and <=100,"GPU reports valid value or unavailable");
+ Console.WriteLine("System sample: "+JsonSerializer.Serialize(measured));
+}
+var testFolder = Path.Combine(Path.GetTempPath(), "PandaLcarsTests-" + Guid.NewGuid());
+Directory.CreateDirectory(testFolder);
+try
+{
+ var serviceFile = Path.Combine(testFolder, "services.json");
+ var services = new PandaLcarsTactical.Settings.PersonalServices(serviceFile);
+ Check(!services.IsEnabled("calendar"), "Fresh install has no personal account");
+ services.SetEnabled("calendar", true);
+ Check(new PandaLcarsTactical.Settings.PersonalServices(serviceFile).IsEnabled("calendar"), "Service selection persists");
+ services.SetEnabled("calendar", false);
+ Check(!new PandaLcarsTactical.Settings.PersonalServices(serviceFile).IsEnabled("calendar"), "Service removal persists");
+ bool unknownRejected = false;
+ try { services.SetEnabled("injected", true); } catch (ArgumentException) { unknownRejected = true; }
+ Check(unknownRejected, "Only known services accepted");
+ File.WriteAllText(serviceFile, "invalid");
+ var corruptServices = new PandaLcarsTactical.Settings.PersonalServices(serviceFile);
+ bool corruptPreserved = false;
+ try { corruptServices.SetEnabled("photos", true); } catch (IOException) { corruptPreserved = true; }
+ Check(corruptPreserved && File.ReadAllText(serviceFile) == "invalid", "Corrupt service settings preserved");
+ var file = Path.Combine(testFolder, "links.json");
+ var store = new PandaLcarsTactical.QuickLaunch.LinkStore(file);
+ Check(store.Links.Count == 5, "Five requested standard links");
+ for (int i=0; i<7; i++) store.Save(null,"Test " + i,"example.com/" + i);
+ var loaded = new PandaLcarsTactical.QuickLaunch.LinkStore(file);
+ Check(loaded.Links.Count == 12 && loaded.Links.Count(x=>x.Custom)==7, "More than eight links persist across restart");
+ var custom = loaded.Links.Last();
+ loaded.Save(custom.Id, "Änderung", "https://example.org/changed");
+ Check(new PandaLcarsTactical.QuickLaunch.LinkStore(file).Links.Last().Name == "Änderung", "Edited name and URL persist");
+ loaded.Delete(custom.Id);
+ Check(new PandaLcarsTactical.QuickLaunch.LinkStore(file).Links.Count == 11, "Deleted custom link stays deleted");
+ foreach(var bad in new[]{"javascript:alert(1)","file:///C:/Windows", "https://user:password@example.com/", "https://panda.local/Web/index.html", "data:text/html,test"})
+ {
+  bool rejected=false; try { loaded.Save(null,"Unsafe",bad); } catch(ArgumentException){rejected=true;}
+  Check(rejected,"Non-web, credential or dashboard URL rejected");
+ }
+ bool standardProtected=false; try { loaded.Delete("krone"); } catch(ArgumentException){standardProtected=true;}
+ Check(standardProtected,"Standard links protected from custom delete");
+ File.WriteAllText(file,"broken JSON");
+ var broken = new PandaLcarsTactical.QuickLaunch.LinkStore(file);
+ Check(broken.Warning is not null && broken.Links.Count == 5 && File.ReadAllText(file)=="broken JSON", "Corrupt file retained and surfaced");
+ var activity = new PandaLcarsTactical.SystemInfo.ActivityStatus();
+ var at = DateTimeOffset.Now;
+ Check(activity.Update(at,0,10,null).Mode == "WORK", "Input means WORK");
+ var standby = activity.Update(at.AddSeconds(180),180,90,null);
+ Check(standby.Mode == "STANDBY", "Inactivity overrides background load");
+ Check(activity.Update(at.AddSeconds(181),0,10,null).Mode == "WORK", "Input wakes immediately");
+ activity.WarpRequested=true;
+ Check(activity.Update(at.AddSeconds(182),0,10,null).Mode == "WARP", "Manual WARP");
+ Check(activity.Update(at.AddSeconds(400),180,10,null).Mode == "STANDBY" && !activity.WarpRequested,"STANDBY clears manual WARP");
+ Check(activity.Update(at.AddSeconds(401),0,85,null).Mode == "WORK", "Brief CPU spike does not cause WARP");
+ Check(activity.Update(at.AddSeconds(412),0,85,null).Mode == "WARP", "Sustained performance causes WARP");
+ Check(activity.Update(at.AddSeconds(413),0,20,null).Mode == "WARP", "Load hysteresis avoids flicker");
+ Check(activity.Update(at.AddSeconds(419),0,20,null).Mode == "WORK", "Calm returns to WORK");
+ var stable = activity.Update(at.AddSeconds(420),0,20,null);
+ Check(stable.Since == at.AddSeconds(419), "Transition timestamp stable between samples");
+}
+finally { Directory.Delete(testFolder,true); }
+Console.WriteLine("All weather, radar, system, quicklaunch and activity tests passed.");
+sealed class FixtureHandler(string data):HttpMessageHandler {
+ protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){token.ThrowIfCancellationRequested();return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(data)});}
+}
+
+
