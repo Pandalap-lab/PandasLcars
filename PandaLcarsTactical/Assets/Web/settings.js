@@ -7,6 +7,7 @@
  $("closeAppSettings").onclick = () => dialog.close();
  $("weatherSettings").onclick = () => { dialog.close(); send("settings"); };
  window.chrome?.webview?.addEventListener("message", ({data:m}) => {
+  if (m.type === "serviceError") { $("serviceWarning").textContent = m.message; return; }
   if (m.type !== "services") return;
   $("serviceRows").replaceChildren();
   const active = m.data.filter(s => s.enabled);

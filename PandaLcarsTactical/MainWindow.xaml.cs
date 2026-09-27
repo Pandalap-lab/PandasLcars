@@ -106,12 +106,14 @@ public sealed partial class MainWindow : Window
     {
         if (!args.Source.StartsWith(Origin + "/", StringComparison.Ordinal)) return;
         string? id = null;
+        string? messageType = null;
         try
         {
             using var document = JsonDocument.Parse(args.WebMessageAsJson);
             var message = document.RootElement;
             id = message.TryGetProperty("id", out var value) ? value.GetString() : null;
-            switch (message.GetProperty("type").GetString())
+            messageType = message.GetProperty("type").GetString();
+            switch (messageType)
             {
                 case "services": SendServices(); break;
                 case "serviceOpen":
@@ -216,7 +218,12 @@ public sealed partial class MainWindow : Window
         }
         catch (OperationCanceledException) { if (id is not null) Send(new { type = "error", id, message = "Abfrage abgebrochen oder Zeitüberschreitung." }); }
         catch (Exception ex) when (ex is not OutOfMemoryException)
-        { Send(new { type = "error", id, message = "Dienst nicht erreichbar oder Daten unvollständig. Bitte erneut versuchen." }); }
+        {
+            bool serviceError = messageType?.StartsWith("service", StringComparison.Ordinal) == true;
+            Send(new { type = serviceError ? "serviceError" : "error", id, message = serviceError
+                ? "Dienst konnte nicht geöffnet oder die Auswahl nicht gespeichert werden. Bitte erneut versuchen."
+                : "Dienst nicht erreichbar oder Daten unvollständig. Bitte erneut versuchen." });
+        }
     }
     private void SendLinks(string? id) => Send(new { type = "links", id, data = links.Links, warning = links.Warning });
     private void SendServices() => Send(new { type = "services", data = services.Snapshot(), warning = services.Warning });

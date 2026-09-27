@@ -20,6 +20,14 @@ jobs:
         run: dotnet run --project PandaLcarsTactical.Tests -c Release
       - name: Test zoom
         run: node PandaLcarsTactical.Tests/zoom.test.cjs
+      - name: Test dashboard in Edge
+        shell: pwsh
+        run: |
+          npm install --prefix "$env:RUNNER_TEMP/pandas-ui" --ignore-scripts --no-package-lock playwright@1.62.1
+          if ($LASTEXITCODE -ne 0) { throw 'UI test dependency installation failed' }
+          $env:PLAYWRIGHT_MODULE = "$env:RUNNER_TEMP/pandas-ui/node_modules/playwright"
+          node PandaLcarsTactical.Tests/dashboard.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'UI tests failed' }
       - name: Build Windows x64
         run: dotnet publish PandaLcarsTactical/PandaLcarsTactical.csproj -c Release -p:Platform=x64 -o artifacts/app
       - name: Package installer and portable app
@@ -27,6 +35,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $version = ([xml](Get-Content PandaLcarsTactical/PandaLcarsTactical.csproj)).Project.PropertyGroup.Version
+          Copy-Item README.md,PandaLcarsTactical/CHANGELOG.md artifacts/app
           if ('${{ github.ref_type }}' -eq 'tag' -and '${{ github.ref_name }}' -ne "v$version") { throw 'Tag and app version must match.' }
           $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           if (!(Test-Path $compiler)) { choco install innosetup --yes --no-progress; if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' } }

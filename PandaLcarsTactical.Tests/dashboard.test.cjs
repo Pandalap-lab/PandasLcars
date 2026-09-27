@@ -47,6 +47,8 @@ const server=http.createServer((req,res)=>{
   assert((await page.locator('#serviceSummary').innerText()).includes('STATUS ?'));
   await page.getByRole('button',{name:'ZUORDNUNG ENTFERNEN',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='serviceRemove'&&x.serviceId==='photos')));
+  fs.mkdirSync(path.resolve(__dirname,'../../qa'),{recursive:true});
+  await page.screenshot({path:path.resolve(__dirname,'../../qa/settings-1500.png')});
   await page.locator('#closeAppSettings').click();
   assert(!(await page.locator('#appSettings').evaluate(el=>el.open)));
   console.log('PASS services settings, truthful status, remove and return');
