@@ -1,4 +1,4 @@
-PandasLcars 0.5.0 – Windows x64
+PandasLcars 0.5.1 – Windows x64
 
 PandasLcars.exe starten. Alle Dateien dieses Ordners zusammenlassen.
 .NET und Windows App SDK sind enthalten. Microsoft Edge WebView2 Runtime

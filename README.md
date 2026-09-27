@@ -30,7 +30,7 @@ noch Umgehungen für eingebettete Anmeldungen verwendet.
 
 GitHub Actions prüft Kernfunktionen und Zoom und erstellt Windows-x64-App,
 Installer, portable ZIP und SHA-256-Prüfsummen. Push auf `main` erzeugt ein
-Build-Artefakt. Ein Tag passend zur Projektversion, z. B. `v0.5.0`, veröffentlicht
+Build-Artefakt. Ein Tag passend zur Projektversion, z. B. `v0.5.1`, veröffentlicht
 nach erfolgreichem Build einen Release. Dafür ist kein persönlicher Token im
 Quellcode nötig. Die Dateien sind derzeit **nicht Authenticode-signiert**.
 

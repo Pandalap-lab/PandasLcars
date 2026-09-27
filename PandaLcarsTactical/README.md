@@ -1,4 +1,4 @@
-# PandasLcars 0.5.0
+# PandasLcars 0.5.1
 
 Windows-11-App für x64 mit C# / WinUI 3 und einer lokal eingebundenen WebView2-Oberfläche. Das LCARS-Mockup bleibt die gestalterische Referenz. Seine statischen Bereiche werden aus dem unveränderten Originalbild zusammengesetzt; echte Bedienflächen ersetzen Karte, Uhr, System Status, Navigation, Wetter, Ziele und Feeds. Das Layout nutzt die verfügbare Fensterbreite.
 

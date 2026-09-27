@@ -16,3 +16,5 @@ artifacts/
 **/appsettings.local.json
 # Historical personal planning material is not part of the public source.
 PandaLcarsTactical/docs/TODO-NEXT-UPDATE.md
+
+qa/

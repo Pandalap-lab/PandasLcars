@@ -47,8 +47,8 @@ const server=http.createServer((req,res)=>{
   assert((await page.locator('#serviceSummary').innerText()).includes('STATUS ?'));
   await page.getByRole('button',{name:'ZUORDNUNG ENTFERNEN',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='serviceRemove'&&x.serviceId==='photos')));
-  fs.mkdirSync(path.resolve(__dirname,'../../qa'),{recursive:true});
-  await page.screenshot({path:path.resolve(__dirname,'../../qa/settings-1500.png')});
+  fs.mkdirSync(path.resolve(__dirname,'../qa'),{recursive:true});
+  await page.screenshot({path:path.resolve(__dirname,'../qa/settings-1500.png')});
   await page.locator('#closeAppSettings').click();
   assert(!(await page.locator('#appSettings').evaluate(el=>el.open)));
   console.log('PASS services settings, truthful status, remove and return');
@@ -66,7 +66,7 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#shipMode').innerText(),mode);
   }
   console.log('PASS all three status renderings');
-  await page.screenshot({path:path.resolve(__dirname,'../../qa/before-zoom.png')});
+  await page.screenshot({path:path.resolve(__dirname,'../qa/before-zoom.png')});
   console.log('Zoom target diagnostics', await page.locator('#globe').evaluate(el=>{const r=el.getBoundingClientRect();const target=document.elementFromPoint(r.left+200,r.top+160);return {tag:target?.tagName,css:target?.className,text:document.querySelector('.cesium-widget-errorPanel')?.textContent};}));
   const before=await page.evaluate(()=>viewer.camera.positionCartographic.height);
   await page.locator('#globe').hover({position:{x:200,y:160}});await page.mouse.wheel(0,-120);
@@ -75,10 +75,11 @@ const server=http.createServer((req,res)=>{
   await page.waitForFunction(()=>zoomTarget===null);
   const after=await page.evaluate(()=>viewer.camera.positionCartographic.height);assert(after<before&&after/before>.95, 'wheel height before='+before+' after='+after);console.log('PASS real Cesium wheel <5% height change');
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=0);
-  const shot=path.resolve(__dirname,'../../qa');fs.mkdirSync(shot,{recursive:true});
+  const shot=path.resolve(__dirname,'../qa');fs.mkdirSync(shot,{recursive:true});
   await page.screenshot({path:path.join(shot,'dashboard-1500.png')});
   for(const [width,height] of [[1200,740],[950,590],[1920,1080]]){
-   await page.setViewportSize({width,height});await page.waitForTimeout(100);
+   await page.setViewportSize({width,height});
+   await page.waitForFunction(()=>{const r=document.querySelector('#quickLinks').getBoundingClientRect();return [...document.querySelectorAll('#quickLinks button')].filter(b=>{const q=b.getBoundingClientRect();return q.top>=r.top-1&&q.bottom<=r.bottom+1}).length===8;});
    assert.equal(await visible(),8);
    assert(await page.locator('#quickLinks').evaluate(el=>el.clientHeight>0));
   }

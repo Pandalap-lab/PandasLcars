@@ -1,6 +1,6 @@
 # Weitere geplante Änderungen
 
-Diese Punkte sind noch nicht Bestandteil von 0.5.0:
+Diese Punkte sind noch nicht Bestandteil von 0.5.x:
 
 - Google-/Microsoft-Appregistrierung und echte persönliche Kontoanbindung mit überprüfbarem Status.
 - Vorhandene obere Tasten für Updates suchen/laden verwenden, Downloadprüfung und Installationsablauf.

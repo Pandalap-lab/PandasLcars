@@ -33,7 +33,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: UI-test-diagnostics
-          path: ../qa/*.png
+          path: qa/*.png
       - name: Build Windows x64
         run: dotnet publish PandaLcarsTactical/PandaLcarsTactical.csproj -c Release -p:Platform=x64 -o artifacts/app
       - name: Package installer and portable app
