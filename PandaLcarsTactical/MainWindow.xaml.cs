@@ -29,6 +29,11 @@ public sealed partial class MainWindow : Window
     private double? lastCpu, lastGpu;
     private DateTimeOffset lastAppInput = DateTimeOffset.Now, lastSample = DateTimeOffset.MinValue;
     private readonly DispatcherTimer activityTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly Settings.DisplaySettings display = new();
+    private readonly DispatcherTimer displayTimer = new() { Interval = TimeSpan.FromSeconds(2) };
+    private int displayAttempts;
+    private Updates.UpdateRelease? availableUpdate;
+    private bool updateBusy;
     public MainWindow()
     {
         InitializeComponent();
@@ -50,10 +55,12 @@ public sealed partial class MainWindow : Window
         activityTimer.Start();
         provider = new OpenMeteoProvider(http);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1500, 980));
+        displayTimer.Tick += (_, _) => { if (PlaceOnMonitor() || ++displayAttempts >= 30) displayTimer.Stop(); };
+        displayTimer.Start();
         Closed += (_, _) =>
         {
             closed = true; weatherRequest?.Cancel(); searchRequest?.Cancel();
-            activityTimer.Stop(); tacticalBrowser?.Dispose();
+            activityTimer.Stop(); displayTimer.Stop(); tacticalBrowser?.Dispose();
             lightning?.Close(); Dashboard.Close(); http.Dispose();
             _ = DisposeMonitorAsync();
         };
@@ -62,6 +69,7 @@ public sealed partial class MainWindow : Window
     {
         if (initialized) return;
         initialized = true;
+        if (PlaceOnMonitor()) displayTimer.Stop();
         try
         {
             var profile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "WebView");
@@ -72,6 +80,7 @@ public sealed partial class MainWindow : Window
             core.Settings.IsStatusBarEnabled = false;
             core.Settings.IsZoomControlEnabled = false;
             core.Settings.AreBrowserAcceleratorKeysEnabled = false;
+            Browser.MapRequestPolicy.Apply(core, () => Origin + "/Web/index.html");
             core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
             core.NewWindowRequested += async (_, args) =>
             {
@@ -115,6 +124,16 @@ public sealed partial class MainWindow : Window
             messageType = message.GetProperty("type").GetString();
             switch (messageType)
             {
+                case "displaySettings": SendDisplay(); break;
+                case "displaySave":
+                    var monitorId = message.GetProperty("monitorId").GetString();
+                    if (monitorId != "auto" && !Settings.DisplaySettings.Monitors().Any(m => m.Id == monitorId)) throw new ArgumentException("Monitor nicht angeschlossen.");
+                    Settings.DisplaySettings.Autostart = message.GetProperty("autostart").GetBoolean();
+                    display.Save(monitorId == "auto" ? null : monitorId, message.GetProperty("fullscreen").GetBoolean());
+                    displayTimer.Stop(); PlaceOnMonitor(); SendDisplay(); break;
+                case "menu": await OpenMenuAsync(message.GetProperty("action").GetString() ?? "", message); break;
+                case "updateCheck": await CheckUpdateAsync(); break;
+                case "updateDownload": await DownloadUpdateAsync(); break;
                 case "services": SendServices(); break;
                 case "serviceOpen":
                     var service = Settings.PersonalServices.Available.FirstOrDefault(s => s.Id == message.GetProperty("serviceId").GetString());
@@ -220,13 +239,102 @@ public sealed partial class MainWindow : Window
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             bool serviceError = messageType?.StartsWith("service", StringComparison.Ordinal) == true;
-            Send(new { type = serviceError ? "serviceError" : "error", id, message = serviceError
+            Send(new { type = messageType?.StartsWith("display") == true || messageType == "menu" ? "settingsError" : serviceError ? "serviceError" : "error", id, message = serviceError
                 ? "Dienst konnte nicht geöffnet oder die Auswahl nicht gespeichert werden. Bitte erneut versuchen."
                 : "Dienst nicht erreichbar oder Daten unvollständig. Bitte erneut versuchen." });
         }
     }
     private void SendLinks(string? id) => Send(new { type = "links", id, data = links.Links, warning = links.Warning });
     private void SendServices() => Send(new { type = "services", data = services.Snapshot(), warning = services.Warning });
+    private bool PlaceOnMonitor()
+    {
+        var monitors = Settings.DisplaySettings.Monitors();
+        var preferred = display.Preferred(monitors);
+        var selected = preferred ?? monitors.FirstOrDefault(m => m.Primary) ?? monitors.FirstOrDefault();
+        if (selected is null) return false;
+        if (preferred is not null && display.MonitorId is null)
+        {
+            try { display.Save(preferred.Id, display.Fullscreen); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+        // Only retry when the desired monitor is absent during Windows startup.
+        if (displayAttempts == 0 || preferred is not null)
+        {
+            AppWindow.SetPresenter(AppWindowPresenterKind.Overlapped);
+            AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(selected.X, selected.Y, selected.Width, selected.Height));
+            if (display.Fullscreen) AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+        }
+        return preferred is not null;
+    }
+    private void SendDisplay() => Send(new { type = "displaySettings", monitors = Settings.DisplaySettings.Monitors(),
+        monitorId = display.MonitorId ?? "auto", fullscreen = display.Fullscreen, autostart = Settings.DisplaySettings.Autostart, warning = display.Warning });
+    private async Task OpenMenuAsync(string action, JsonElement message)
+    {
+        switch (action)
+        {
+            case "tactical": CloseTactical(); break;
+            case "system": await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:")); break;
+            case "maps":
+                var targetPlace = message.GetProperty("place").Deserialize<GeoPlace>(Json) ?? GeoPlace.Vienna;
+                targetPlace.Validate();
+                await OpenTacticalAsync(new LaunchLink("maps", "Google Maps", FormattableString.Invariant($"https://www.google.com/maps/search/?api=1&query={targetPlace.Latitude},{targetPlace.Longitude}"), false)); break;
+            case "data": System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe") { UseShellExecute = true }); break;
+            case "photos": case "calendar":
+                var service = Settings.PersonalServices.Available.Single(s => s.Id == action);
+                if (FirefoxLauncher.Find() is not null) FirefoxLauncher.Open(service.Url);
+                else await Windows.System.Launcher.LaunchUriAsync(new Uri(service.Url));
+                break;
+            case "desktop": ShowDesktop(); break;
+            case "power": await ShowPowerAsync(); break;
+        }
+    }
+    private static void ShowDesktop()
+    {
+        var type = Type.GetTypeFromProgID("Shell.Application") ?? throw new IOException("Windows-Shell nicht verfügbar.");
+        var shell = Activator.CreateInstance(type)!;
+        try { type.InvokeMember("MinimizeAll", System.Reflection.BindingFlags.InvokeMethod, null, shell, null); }
+        finally { System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell); }
+    }
+    private async Task ShowPowerAsync()
+    {
+        var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "POWER · Laptop", Content = "Offene Dokumente zuerst speichern. Welche Aktion möchtest du ausführen?", PrimaryButtonText = "Herunterfahren", SecondaryButtonText = "Neustart", CloseButtonText = "Abbrechen", DefaultButton = ContentDialogButton.Close };
+        var choice = await dialog.ShowAsync();
+        if (choice == ContentDialogResult.None) return;
+        var confirm = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "Aktion bestätigen", Content = choice == ContentDialogResult.Primary ? "Laptop jetzt herunterfahren?" : "Laptop jetzt neu starten?", PrimaryButtonText = "Ja, jetzt", CloseButtonText = "Abbrechen", DefaultButton = ContentDialogButton.Close };
+        if (await confirm.ShowAsync() != ContentDialogResult.Primary) return;
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "shutdown.exe"), choice == ContentDialogResult.Primary ? "/s /t 0" : "/r /t 0") { UseShellExecute = false, CreateNoWindow = true });
+    }
+    private async Task CheckUpdateAsync()
+    {
+        if (updateBusy) return;
+        updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
+        try
+        {
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.0"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.0" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+        }
+        catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
+        finally { updateBusy = false; }
+    }
+    private async Task DownloadUpdateAsync()
+    {
+        if (updateBusy || availableUpdate is null) return;
+        updateBusy = true; Send(new { type = "update", state = "downloading", message = "UPDATE WIRD GELADEN …" });
+        try
+        {
+            var installer = await new Updates.UpdateClient(http).DownloadAsync(availableUpdate);
+            Send(new { type = "update", state = "available", message = "UPDATE GEPRÜFT · BEREIT" });
+            var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "Update installieren", Content = "Download und SHA-256-Prüfung abgeschlossen. PandasLcars wird geschlossen und das Setup gestartet. Einstellungen bleiben erhalten. Der Installer ist nicht digital signiert; Windows oder Norton können ihn prüfen oder blockieren.", PrimaryButtonText = "Installieren", CloseButtonText = "Später", DefaultButton = ContentDialogButton.Close };
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installer) { UseShellExecute = true });
+                Close();
+            }
+        }
+        catch { Send(new { type = "update", state = "available", message = "UPDATE NICHT GESTARTET · ERNEUT VERSUCHEN" }); }
+        finally { updateBusy = false; }
+    }
     private async Task RefreshSystemAsync()
     {
         if (closed || DateTimeOffset.Now - lastSample < TimeSpan.FromSeconds(2) || !await monitorLock.WaitAsync(0)) return;

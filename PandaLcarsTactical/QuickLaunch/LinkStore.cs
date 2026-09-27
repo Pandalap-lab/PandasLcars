@@ -74,10 +74,7 @@ public sealed class LinkStore
     private void Commit(List<LaunchLink> next)
     {
         if (Warning is not null) throw new IOException(Warning);
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        var temp = path + ".tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(next.Where(x => x.Custom), new JsonSerializerOptions { WriteIndented = true }));
-        File.Move(temp, path, true);
+        Settings.AtomicFile.Write(path, JsonSerializer.Serialize(next.Where(x => x.Custom), new JsonSerializerOptions { WriteIndented = true }));
         Links = next;
     }
 }

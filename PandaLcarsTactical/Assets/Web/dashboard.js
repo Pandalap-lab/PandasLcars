@@ -44,6 +44,15 @@ function drawArtwork(){
   const image=document.createElementNS("http://www.w3.org/2000/svg","image");
   image.setAttribute("href","../tactical-reference.png");image.setAttribute("width","1536");image.setAttribute("height","1024");
   svg.append(image);host.prepend(svg);
+  // Replace lettering in SVG coordinates, leaving the original artwork untouched.
+  const labels = host.classList.contains("insignia") ? [[27,863,91,24,"NCC-080470",16]] : host.classList.contains("ship") ? [[522,768,101,22,"NCC-080470",17]] : [];
+  for (const [x,y,w,h,text,size] of labels) {
+   const cover = document.createElementNS(svg.namespaceURI,"rect");
+   for (const [k,v] of Object.entries({x,y,width:w,height:h,fill:"black"})) cover.setAttribute(k,v);
+   const caption = document.createElementNS(svg.namespaceURI,"text");
+   for (const [k,v] of Object.entries({x,y:y+h-5,fill:"#83baff","font-size":size,"font-family":"Arial Narrow, sans-serif",textLength:w-1,lengthAdjust:"spacingAndGlyphs"})) caption.setAttribute(k,v);
+   caption.textContent = text; svg.append(cover,caption);
+  }
  }
 }
 function renderTargets(results){

@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://tilecache.rainviewer.com; connect-src 'self' https://tile.openstreetmap.org https://tilecache.rainviewer.com; worker-src 'self' blob:; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://tile.openstreetmap.org https://tilecache.rainviewer.com; worker-src 'self' blob:; object-src 'none'; frame-src 'none'">
 <title>PandasLcars</title><link rel="stylesheet" href="Cesium/Widgets/widgets.css"><link rel="stylesheet" href="dashboard.css">
 <script src="Cesium/Cesium.js" defer></script><script src="zoom.js" defer></script><script src="dashboard.js" defer></script><script src="quicklaunch.js" defer></script><script src="settings.js" defer></script></head>
 <body>
 <div class="dashboard">
-<header class="top"><div class="art" data-crop="0 0 1536 76"></div><div class="app-brand">PandasLcars<small>TACTICAL</small></div><div class="clock"><span id="date"></span><strong id="clock"></strong></div></header>
-<aside class="navigation art" data-crop="16 81 225 643" aria-label="LCARS-Navigation"><button id="openAppSettings" aria-label="09 Settings – PandasLcars Einstellungen" title="PandasLcars Einstellungen"></button></aside>
+<header class="top"><div class="art" data-crop="0 0 1536 76"></div><div class="app-brand">PandasLcars<small>TACTICAL</small></div><div class="update-controls"><button id="updateCheck">UPDATES SUCHEN</button><button id="updateDownload" disabled title="77852 · Update laden">77852 · UPDATE LADEN</button></div><span id="updateStatus" role="status"></span><div class="clock"><span id="date"></span><strong id="clock"></strong></div></header>
+<aside class="navigation art" data-crop="16 81 225 643" aria-label="LCARS-Navigation">
+<div class="menu-buttons"><button data-action="tactical" aria-label="01 Tactical"></button><button data-action="system" aria-label="02 System – Windows Einstellungen"></button><button data-action="maps" aria-label="03 Navigation – Google Maps"></button><button data-action="communication" aria-label="04 Communication – noch nicht zugeordnet"></button><button data-action="data" aria-label="05 Data – Datei-Explorer"></button><button data-action="photos" aria-label="06 Media – Google Fotos"></button><button data-action="calendar" aria-label="07 Calendar – Outlook Kalender"></button><button data-action="desktop" aria-label="08 Programs – Desktop anzeigen"></button><button id="openAppSettings" aria-label="09 Settings – PandasLcars Einstellungen"></button><button data-action="power" aria-label="10 Power – Neustart oder Herunterfahren"></button></div></aside>
 <main class="tactical panel">
  <div class="tactical-title"><div><h1>TACTICAL SITUATION</h1><span>GLOBAL VIEW &nbsp; // &nbsp; LIVE WEATHER &nbsp; // &nbsp; PANDA</span></div><div class="sector"><small>SECTOR EARTH</small><b id="sectorName">WIEN, ÖSTERREICH</b></div></div>
  <div class="map-wrap"><div id="globe" aria-label="Interaktive Weltkugel"></div>
@@ -41,7 +42,7 @@
 <div class="system-row network-row"><span>NETZ</span><output id="networkValue">Messung …</output></div>
 <div class="system-row"><span>AKKU</span><progress id="batteryBar" max="100" value="0" aria-label="Akkustand"></progress><output id="batteryValue">—</output></div>
 </div><small id="systemStatus">Windows-Messwerte werden geladen …</small></section>
- <section class="panel location"><h2>NAVIGATION</h2><div class="location-body"><div><strong id="locationName">WIEN, ÖSTERREICH</strong><span id="locationCoords"></span><small id="locationDistance">Startposition Wien</small></div><div class="compass">N<span>▲</span>S</div></div></section>
+ <section class="panel location"><h2>NAVIGATION</h2><div class="location-body"><div><small>CURRENT LOCATION</small><strong id="locationName">WIEN, ÖSTERREICH</strong><span id="locationCoords"></span><small id="locationDistance">Startposition Wien</small><small class="nav-source">ZIELKOORDINATEN · KARTE</small></div><svg class="compass" viewBox="0 0 120 120" role="img" aria-label="Kompass, Norden oben"><circle cx="60" cy="60" r="43" fill="none" stroke="#28a3db" stroke-width="1"/><path d="M60 15v8 M60 97v8 M15 60h8 M97 60h8 M30 30l4 4 M86 86l4 4 M30 90l4-4 M86 34l4-4" stroke="#28a3db"/><path d="M60 36L42 83 60 72 78 83Z" fill="#72a5ff"/><path d="M60 36V72L78 83Z" fill="#2876d9"/><g fill="#9dccff" font-size="10" text-anchor="middle"><text x="60" y="10">N</text><text x="60" y="117">S</text><text x="8" y="64">W</text><text x="112" y="64">E</text></g></svg></div></section>
  <section class="panel forecast"><h2>WEATHER · 3 TAGE</h2><div class="forecast-location" id="forecastPlace">Wien · Ortszeit</div><div id="forecastRows" aria-live="polite"><p>Vorhersage wird geladen …</p></div><small id="forecastStatus"></small></section>
 </aside>
 <div class="insignia art" data-crop="24 736 119 213" aria-label="U.S.S. Panda, statisches Emblem"></div>
@@ -59,7 +60,7 @@
  <section class="panel targets"><h2>TARGETS / DESTINATIONS</h2><form id="searchForm"><input id="search" type="search" placeholder="Ort suchen …" aria-label="Ort suchen" minlength="2" maxlength="100"><button type="submit" title="Ort suchen">⌕</button></form><small id="searchStatus" role="status">Ziel wählen · Entfernung ab Wien</small><div id="destinations"></div></section>
  <section class="quick panel" aria-label="Quicklaunch"><h2>QUICK LAUNCH <button id="manageLinks" title="Eigene Links bearbeiten oder löschen" aria-label="Eigene Links verwalten">⚙</button></h2><div id="quickLinks" aria-label="Webseiten, maximal acht gleichzeitig sichtbar" tabindex="0"></div><button id="addLink">+ WEITERE</button></section>
 </div>
-<footer><span>PandasLcars v0.5.1 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Persönliche Dienste und Anmeldestatus">DIENSTE · NICHT EINGERICHTET</button></footer>
+<footer><span>PandasLcars v0.6.0 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Persönliche Dienste und Anmeldestatus">DIENSTE · NICHT EINGERICHTET</button></footer>
 </div>
 <dialog id="linkDialog" aria-labelledby="linkDialogTitle"><form id="linkForm">
  <h2 id="linkDialogTitle">QUICK LAUNCH · LINK HINZUFÜGEN</h2>
@@ -71,6 +72,12 @@
 <dialog id="manageDialog" aria-labelledby="manageTitle"><h2 id="manageTitle">EIGENE LINKS</h2><div id="customLinks"></div><p id="manageError" role="alert"></p><button id="closeManage">SCHLIESSEN</button></dialog>
 <dialog id="appSettings" aria-labelledby="appSettingsTitle">
 <h2 id="appSettingsTitle">PandasLcars · SETTINGS</h2>
+<h3>START &amp; BILDSCHIRM</h3>
+<label>Startbildschirm<select id="startMonitor"><option value="auto">Automatisch: Monitor 3</option></select></label>
+<label class="check-label"><input id="startFullscreen" type="checkbox" checked>Im Vollbild starten</label>
+<label class="check-label"><input id="startAutostart" type="checkbox">Mit Windows starten</label>
+<button id="saveDisplay">SPEICHERN &amp; AUF BILDSCHIRM ANWENDEN</button><p id="displayStatus" role="status"></p>
+<p>Ist der gewählte Monitor nicht angeschlossen, startet die App auf dem Hauptmonitor. Beim Start wird bis zu einer Minute auf den Zielmonitor gewartet.</p>
 <p>Persönliche Dienste</p>
 <p>Anmeldung direkt bei Google, Microsoft oder Facebook im Browser (Firefox bevorzugt). Jeder Windows-Benutzer verwendet seine eigenen Konten.</p>
 <div id="serviceRows"></div><p id="serviceWarning" role="alert"></p>

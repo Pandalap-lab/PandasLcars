@@ -23,6 +23,7 @@ public sealed class LightningWindow : Window
                 string profile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "LightningBrowser");
                 await browser.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, null));
                 if (closed) return;
+                Browser.MapRequestPolicy.Apply(browser.CoreWebView2, () => browser.CoreWebView2.Source);
                 browser.CoreWebView2.NewWindowRequested += (_, e) => e.Handled = true;
                 browser.CoreWebView2.PermissionRequested += (_, e) => e.State = CoreWebView2PermissionState.Deny;
                 browser.CoreWebView2.Navigate(FormattableString.Invariant($"https://www.lightningmaps.org/?lang=de#m=oss;t=3;s=0;z=7;y={place.Latitude};x={place.Longitude};"));

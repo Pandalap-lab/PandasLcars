@@ -22,6 +22,7 @@ const server=http.createServer((req,res)=>{
    window.testSent=[];
    window.chrome={webview:{addEventListener:(name,fn)=>listeners.push(fn),postMessage:msg=>{
     window.testSent.push(msg);
+    if(msg.type==='displaySettings')setTimeout(()=>window.testMessage({type:'displaySettings',monitors:[{id:'monitor-test',name:'Monitor 3',width:1920,height:1080,primary:false}],monitorId:'monitor-test',fullscreen:true,autostart:true}),10);
     if(msg.type==='services')setTimeout(()=>window.testMessage({type:'services',data:[{id:'photos',name:'Google Fotos',enabled:false,status:'NICHT EINGERICHTET'}]}),10);
     if(msg.type==='links')setTimeout(()=>window.testMessage({type:'links',data:window.testLinks}),10);
     if(msg.type==='linkSave'){
@@ -41,6 +42,10 @@ const server=http.createServer((req,res)=>{
   const visible=()=>page.evaluate(()=>{const r=document.querySelector('#quickLinks').getBoundingClientRect();return [...document.querySelectorAll('#quickLinks button')].filter(b=>{const q=b.getBoundingClientRect();return q.top>=r.top-1&&q.bottom<=r.bottom+1}).length;});
   await page.locator('#serviceSummary').click();
   await page.waitForFunction(()=>document.querySelectorAll('.service-row').length===1);
+  await page.waitForFunction(()=>document.querySelector('#startMonitor').value==='monitor-test');
+  assert(await page.locator('#startAutostart').isChecked());
+  await page.locator('#saveDisplay').click();
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='displaySave'&&x.monitorId==='monitor-test'&&x.fullscreen&&x.autostart)));
   await page.getByRole('button',{name:'IM BROWSER EINRICHTEN',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='serviceOpen'&&x.serviceId==='photos')));
   await page.evaluate(()=>testMessage({type:'services',data:[{id:'photos',name:'Google Fotos',enabled:true,status:'IM BROWSER · STATUS UNBEKANNT'}]}));
@@ -52,6 +57,23 @@ const server=http.createServer((req,res)=>{
   await page.locator('#closeAppSettings').click();
   assert(!(await page.locator('#appSettings').evaluate(el=>el.open)));
   console.log('PASS services settings, truthful status, remove and return');
+  for(const action of ['tactical','system','maps','data','photos','calendar','desktop','power']) {
+   await page.locator('[data-action="'+action+'"]').click();
+   assert(await page.evaluate(action=>testSent.some(x=>x.type==='menu'&&x.action===action),action));
+  }
+  await page.locator('#updateCheck').click();
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='updateCheck')));
+  await page.evaluate(()=>testMessage({type:'update',state:'available',message:'UPDATE v0.6.1 VORHANDEN'}));
+  assert(await page.locator('#updateDownload').isEnabled());
+  await page.locator('#updateDownload').click();
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='updateDownload')));
+  await page.evaluate(()=>testMessage({type:'update',state:'downloading',message:'LÄDT'}));
+  assert(await page.locator('#updateDownload').isDisabled());
+  await page.evaluate(()=>testMessage({type:'update',state:'current',message:'AKTUELL'}));
+  assert.equal(await page.locator('.insignia svg text').textContent(),'NCC-080470');
+  assert.equal(await page.locator('.ship svg text').textContent(),'NCC-080470');
+  assert.equal(await page.locator('#quickLinks img').count(),12);
+  console.log('PASS monitor settings, menu routing, update states, NCC lettering and icon slots');
   assert.equal(await visible(),8);console.log('PASS exactly eight visible quicklaunch tiles');
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=el.scrollHeight);
   assert(await page.locator('#quickLinks').evaluate(el=>el.scrollTop>0));assert.equal(await visible(),8);

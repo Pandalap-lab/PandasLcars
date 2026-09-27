@@ -39,9 +39,31 @@ if(OperatingSystem.IsWindows()){
  Console.WriteLine("System sample: "+JsonSerializer.Serialize(measured));
 }
 var testFolder = Path.Combine(Path.GetTempPath(), "PandaLcarsTests-" + Guid.NewGuid());
+string Release(string version, string host = "https://github.com/Pandalap-lab/PandasLcars", bool preview = false) => JsonSerializer.Serialize(new {
+ tag_name = "v" + version, draft = false, prerelease = preview,
+ assets = new[] {"PandasLcars-Setup.exe", "SHA256SUMS.txt"}.Select(name => new {name, browser_download_url = host + "/releases/download/v" + version + "/" + name}) });
+Check(PandaLcarsTactical.Updates.UpdateClient.Parse(Release("0.6.1"), new Version("0.6.0"))?.Tag == "v0.6.1", "New stable release offered");
+Check(PandaLcarsTactical.Updates.UpdateClient.Parse(Release("0.5.1"), new Version("0.6.0")) is null, "No downgrade offered");
+Check(PandaLcarsTactical.Updates.UpdateClient.Parse(Release("0.6.0"), new Version("0.6.0")) is null, "Installed version is current");
+Check(PandaLcarsTactical.Updates.UpdateClient.Parse(Release("0.7.0", preview:true), new Version("0.6.0")) is null, "Prerelease not installed automatically");
+bool foreignUpdateRejected=false;
+try { PandaLcarsTactical.Updates.UpdateClient.Parse(Release("0.7.0", "https://example.org"), new Version("0.6.0")); } catch(InvalidDataException) { foreignUpdateRejected=true; }
+Check(foreignUpdateRejected,"Foreign installer URL rejected");
+Check(!PandaLcarsTactical.Updates.UpdateClient.Verify(new string('0',64), System.Security.Cryptography.SHA256.HashData(new byte[]{1})), "Tampered download rejected");
 Directory.CreateDirectory(testFolder);
 try
 {
+ var displayFile = Path.Combine(testFolder,"display.json");
+ var displays = new PandaLcarsTactical.Settings.DisplaySettings(displayFile);
+ var sampleDisplays = new List<PandaLcarsTactical.Settings.MonitorChoice> {new("primary","Monitor 1",0,0,1920,1080,true),new("second","Monitor 5",0,-1080,1920,1080,false),new("stable-third","Monitor 9",1920,0,1920,1080,false)};
+ Check(displays.Preferred(sampleDisplays)?.Id == "stable-third", "Default selects Monitor 3");
+ displays.Save("stable-third",true);
+ displays = new PandaLcarsTactical.Settings.DisplaySettings(displayFile);
+ sampleDisplays[2] = sampleDisplays[2] with {Name="Monitor 2"};
+ Check(displays.Preferred(sampleDisplays)?.Name=="Monitor 2" && displays.Fullscreen,"Monitor device identity persists across numbering change");
+ sampleDisplays.RemoveAt(2);
+ Check(displays.Preferred(sampleDisplays) is null,"Disconnected preferred display triggers fallback, not wrong monitor");
+ if(OperatingSystem.IsWindows()) Console.WriteLine("Connected displays: "+string.Join(", ",PandaLcarsTactical.Settings.DisplaySettings.Monitors().Select(m=>$"{m.Name}: {m.Width}x{m.Height} at {m.X},{m.Y}")));
  var serviceFile = Path.Combine(testFolder, "services.json");
  var services = new PandaLcarsTactical.Settings.PersonalServices(serviceFile);
  Check(!services.IsEnabled("calendar"), "Fresh install has no personal account");

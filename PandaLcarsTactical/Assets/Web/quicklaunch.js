@@ -26,8 +26,11 @@
    const button = document.createElement("button");
    const badge = document.createElement("span"); badge.className = "link-badge";
    badge.textContent = link.name.slice(0,2).toLocaleUpperCase("de-AT");
+   const icon = document.createElement("img"); icon.className = "site-icon"; icon.alt = ""; icon.referrerPolicy = "no-referrer";
+   try { const url = new URL(link.url); if (url.protocol === "https:") icon.src = url.origin + "/favicon.ico"; } catch {}
+   icon.onload = () => { badge.hidden = true; }; icon.onerror = () => { icon.hidden = true; badge.hidden = false; };
    const label = document.createElement("span"); label.textContent = link.name;
-   button.append(badge, label); button.title = link.name + " · " + link.url;
+   button.append(icon, badge, label); button.title = link.name + " · " + link.url;
    button.setAttribute("aria-label", link.name + " in Tactical öffnen");
    button.onclick = () => send("linkOpen", {linkId:link.id});
    $("quickLinks").append(button);

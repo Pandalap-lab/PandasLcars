@@ -1,3 +1,12 @@
+# 0.6.0 – Monitorstart und Bedienung
+
+- Persistente Bildschirmwahl, Vollbild, Windows-Autostart, Hauptmonitor-Fallback.
+- Updateprüfung und geprüfter Installer-Download über vorhandene obere Tasten.
+- LCARS-Navigation mit Kompass wiederhergestellt; Menüaktionen angebunden.
+- Quicklaunch-Favicons, NCC-080470, OSM-Appkennung/Referer ergänzt.
+- Dateispeicherung bei vorübergehenden Dateisperren stabilisiert.
+- Wetter, Weltkugel, US-Panda-Bild und Spock-Panda-Appsymbol erhalten.
+- OAuth bleibt von eigenen registrierten Client-IDs abhängig; kein fingierter Kontostatus.
 # 0.5.1 – Veröffentlichung
 
 - Grafik- und Größenänderungstests für virtuelle Windows-Buildrechner stabilisiert.
@@ -34,3 +43,4 @@
 ## NÃ¤chster mÃ¶glicher Ausbau
 
 Einmalige Installation und danach Aktualisierung am selben Ort. Ein spÃ¤terer Update-Dialog benÃ¶tigt einen festen VerÃ¶ffentlichungskanal, nachvollziehbare Herausgeber-/IntegritÃ¤tsprÃ¼fung und eine RÃ¼ckfallversion. Version 0.4.0 enthÃ¤lt noch keinen automatischen Updater.
+

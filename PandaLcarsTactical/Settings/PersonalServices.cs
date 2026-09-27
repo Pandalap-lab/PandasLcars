@@ -34,9 +34,7 @@ public sealed class PersonalServices
         if (Warning is not null) throw new IOException(Warning);
         var next = enabled.ToHashSet();
         if (value) next.Add(id); else next.Remove(id);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path + ".tmp", JsonSerializer.Serialize(next));
-        File.Move(path + ".tmp", path, true);
+        AtomicFile.Write(path, JsonSerializer.Serialize(next));
         enabled = next;
     }
     public object Snapshot() => Available.Select(s => new { s.Id, s.Name, enabled = IsEnabled(s.Id),
