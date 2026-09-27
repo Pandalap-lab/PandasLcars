@@ -47,6 +47,10 @@ public sealed class OpenMeteoProvider(HttpClient client) : IWeatherProvider
             if (low > high || (i > 0 && date != forecast[i - 1].Date.AddDays(1))) throw new JsonException("Ungültige Vorhersage.");
             forecast.Add(new(date, low, high, codes[i].GetInt32()));
         }
-        return new(place, sample, forecast, root.GetProperty("timezone").GetString() ?? "UTC");
+        var timezone = root.GetProperty("timezone").GetString() ?? "UTC";
+        CelestialDay? celestial = null;
+        try { celestial = CelestialTimes.Calculate(place, forecast[0].Date, timezone); }
+        catch (Exception e) when (e is TimeZoneNotFoundException or InvalidTimeZoneException or ArgumentException) { }
+        return new(place, sample, forecast, timezone, celestial);
     }
 }

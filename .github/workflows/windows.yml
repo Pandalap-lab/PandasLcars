@@ -20,6 +20,8 @@ jobs:
         run: dotnet run --project PandaLcarsTactical.Tests -c Release
       - name: Test zoom
         run: node PandaLcarsTactical.Tests/zoom.test.cjs
+      - name: Test Earth rotation
+        run: node PandaLcarsTactical.Tests/earth-motion.test.cjs
       - name: Test dashboard in Edge
         shell: pwsh
         run: |
@@ -49,21 +51,43 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
           Compress-Archive artifacts/app/* artifacts/PandasLcars-Windows-x64.zip
           Get-FileHash artifacts/PandasLcars-Setup.exe,artifacts/PandasLcars-Windows-x64.zip -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } | Set-Content artifacts/SHA256SUMS.txt
+      - name: Get 0.6.0 source for upgrade test
+        uses: actions/checkout@v4
+        with:
+          ref: 97d17ffa6b04501a7d5ac63c408e1391db1ab3c6
+          path: upgrade-baseline
+      - name: Build previous installer
+        shell: pwsh
+        run: |
+          dotnet publish upgrade-baseline/PandaLcarsTactical/PandaLcarsTactical.csproj -c Release -p:Platform=x64 -o upgrade-baseline/artifacts/app
+          if ($LASTEXITCODE -ne 0) { throw 'Baseline build failed' }
+          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" /DAppVersion=0.6.0 upgrade-baseline/installer/PandasLcars.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Baseline installer failed' }
       - name: Test installation, upgrade and uninstall on clean runner
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $version = ([xml](Get-Content PandaLcarsTactical/PandaLcarsTactical.csproj)).Project.PropertyGroup.Version
           $appDir = Join-Path $env:LOCALAPPDATA 'Programs/PandasLcars'
           $dataDir = Join-Path $env:LOCALAPPDATA 'PandaLcarsTactical'
           New-Item -ItemType Directory -Force $dataDir | Out-Null
           $sentinel = Join-Path $dataDir 'qa-preservation.txt'
           Set-Content $sentinel 'keep-personal-settings'
+          $displayFile = Join-Path $dataDir 'display.json'
+          Set-Content $displayFile '{"monitorId":"upgrade-test-monitor","fullscreen":true}'
+          $displayHash = (Get-FileHash $displayFile).Hash
+          $baseline = (Resolve-Path upgrade-baseline/artifacts/PandasLcars-Setup.exe).Path
+          $initial = Start-Process -FilePath $baseline -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -WindowStyle Hidden -Wait -PassThru
+          if ($initial.ExitCode -ne 0) { throw 'Baseline install failed' }
+          if ((Get-Item (Join-Path $appDir 'PandasLcars.exe')).VersionInfo.FileVersion -ne '0.6.0.0') { throw 'Baseline version mismatch' }
           $setup = (Resolve-Path artifacts/PandasLcars-Setup.exe).Path
           foreach ($attempt in 1..2) {
             $process = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/TASKS=autostart' -WindowStyle Hidden -Wait -PassThru
             if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
             if (!(Test-Path (Join-Path $appDir 'PandasLcars.exe'))) { throw 'Installed executable missing' }
             if ((Get-Content $sentinel) -ne 'keep-personal-settings') { throw 'Personal settings changed' }
+            if ((Get-FileHash $displayFile).Hash -ne $displayHash) { throw 'Display settings changed' }
+            if ((Get-Item (Join-Path $appDir 'PandasLcars.exe')).VersionInfo.FileVersion -ne "$version.0") { throw 'Updated executable version mismatch' }
           }
           $runKey = 'HKCU:/Software/Microsoft/Windows/CurrentVersion/Run'
           if ((Get-ItemPropertyValue $runKey PandasLcars) -notlike '*PandasLcars.exe*--autostart') { throw 'Autostart entry missing' }
@@ -71,6 +95,7 @@ jobs:
           if ($uninstall.ExitCode -ne 0) { throw 'Uninstall failed' }
           if (Test-Path (Join-Path $appDir 'PandasLcars.exe')) { throw 'App was not removed' }
           if ((Get-Content $sentinel) -ne 'keep-personal-settings') { throw 'Uninstall removed user settings' }
+          if ((Get-FileHash $displayFile).Hash -ne $displayHash) { throw 'Uninstall removed display settings' }
           $remaining = Get-ItemProperty $runKey -ErrorAction SilentlyContinue
           if ($remaining -and $remaining.PSObject.Properties.Name -contains 'PandasLcars') { throw 'Uninstall left autostart behind' }
       - uses: actions/upload-artifact@v4
@@ -88,6 +113,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: PandasLcars-Windows-x64
@@ -97,4 +123,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" artifacts/* --verify-tag --title "PandasLcars $TAG" --generate-notes
+        run: gh release create "$TAG" artifacts/* --verify-tag --title "PandasLcars $TAG" --notes-file "docs/release-${TAG#v}.md"

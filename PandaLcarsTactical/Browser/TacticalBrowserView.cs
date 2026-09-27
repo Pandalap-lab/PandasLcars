@@ -27,7 +27,7 @@ public sealed class TacticalBrowserView : Grid, IDisposable
         for (int i = 0; i < 5; i++) toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = i == 2 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
         var reload = new Button { Content = "↻ LADEN", MinHeight = 40 };
         var firefox = new Button { Content = "IN FIREFOX ÖFFNEN", MinHeight = 40 };
-        var close = new Button { Content = "✕ HAUPTANSICHT", MinHeight = 40, Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 173, 72)), Foreground = new SolidColorBrush(Microsoft.UI.Colors.Black) };
+        var close = new Button { Content = "BACK", MinHeight = 40, Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 173, 72)), Foreground = new SolidColorBrush(Microsoft.UI.Colors.Black) };
         var controls = new FrameworkElement[] { back, reload, address, firefox, close };
         for (int i = 0; i < controls.Length; i++) { SetColumn(controls[i], i); toolbar.Children.Add(controls[i]); }
         SetRow(toolbar, 1); Children.Add(toolbar);
@@ -35,9 +35,9 @@ public sealed class TacticalBrowserView : Grid, IDisposable
         SetRow(browser.View, 3); Children.Add(browser.View);
         close.Click += (_, _) => CloseRequested?.Invoke();
         back.Click += (_, _) => browser.GoBack(); reload.Click += (_, _) => browser.Reload();
-        firefox.Click += (_, _) =>
+        firefox.Click += async (_, _) =>
         {
-            try { FirefoxLauncher.Open(address.Text); }
+            try { if (!await FirefoxLauncher.OpenAsync(address.Text)) status.Text = "Firefox geöffnet; Fensterposition bitte prüfen."; }
             catch (Exception ex) when (ex is not OutOfMemoryException) { status.Text = ex.Message; }
         };
         browser.StatusChanged += UpdateStatus;

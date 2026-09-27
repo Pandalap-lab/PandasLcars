@@ -18,7 +18,8 @@ public sealed record GeoPlace(string Name, double Latitude, double Longitude, st
     }
 }
 public sealed record ForecastDay(DateOnly Date, double MinimumC, double MaximumC, int WeatherCode);
-public sealed record WeatherReport(GeoPlace Place, WeatherSample Current, IReadOnlyList<ForecastDay> Daily, string Timezone);
+public sealed record WeatherReport(GeoPlace Place, WeatherSample Current, IReadOnlyList<ForecastDay> Daily, string Timezone,
+    CelestialDay? Celestial = null);
 
 // Provider data is independent of UI, secrets and geographic rendering.
 public interface IWeatherProvider

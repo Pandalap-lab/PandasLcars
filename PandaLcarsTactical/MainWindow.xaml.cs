@@ -20,7 +20,7 @@ public sealed partial class MainWindow : Window
     private readonly SemaphoreSlim monitorLock = new(1, 1);
     private CancellationTokenSource? weatherRequest, searchRequest;
     private bool closed, initialized, settingsOpen;
-    private LightningWindow? lightning;
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private const string Origin = "https://panda.local";
     private readonly LinkStore links = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "quicklaunch.json"));
@@ -63,7 +63,7 @@ public sealed partial class MainWindow : Window
         {
             closed = true; weatherRequest?.Cancel(); searchRequest?.Cancel();
             activityTimer.Stop(); displayTimer.Stop(); tacticalBrowser?.Dispose();
-            lightning?.Close(); Dashboard.Close(); http.Dispose();
+            Dashboard.Close(); http.Dispose();
             _ = DisposeMonitorAsync();
         };
     }
@@ -148,7 +148,7 @@ public sealed partial class MainWindow : Window
                     var service = Settings.PersonalServices.Available.FirstOrDefault(s => s.Id == message.GetProperty("serviceId").GetString());
                     if (service is null) break;
                     bool launched;
-                    if (FirefoxLauncher.Find() is not null) { FirefoxLauncher.Open(service.Url); launched = true; }
+                    if (FirefoxLauncher.Find() is not null) { await OpenFirefoxAsync(service.Url); launched = true; }
                     else launched = await Windows.System.Launcher.LaunchUriAsync(new Uri(service.Url));
                     if (!launched) throw new IOException("Browser konnte nicht geöffnet werden.");
                     SendServices();
@@ -228,29 +228,28 @@ public sealed partial class MainWindow : Window
                     break;
                 case "settings": await ShowSettingsAsync(); break;
                 case "lightning":
-                    if (message.GetProperty("on").GetBoolean())
-                    {
-                        var place = message.GetProperty("place").Deserialize<GeoPlace>(Json) ?? GeoPlace.Vienna;
-                        place.Validate();
-                        if (lightning is null)
-                        {
-                            lightning = new LightningWindow(place);
-                            lightning.Closed += (_, _) => { lightning = null; Send(new { type = "lightningClosed" }); };
-                        }
-                        lightning.Activate();
-                    }
-                    else lightning?.Close();
+                    var lightningPlace = message.GetProperty("place").Deserialize<GeoPlace>(Json) ?? GeoPlace.Vienna;
+                    lightningPlace.Validate();
+                    var screen = display.Preferred(Settings.DisplaySettings.Monitors());
+                    var lightningUrl=FormattableString.Invariant($"https://www.lightningmaps.org/?lang=de#m=oss;t=3;s=0;z=7;y={lightningPlace.Latitude};x={lightningPlace.Longitude};");
+                    bool positioned=await FirefoxLauncher.OpenAsync(lightningUrl,screen ?? Settings.DisplaySettings.Monitors().FirstOrDefault(m=>m.Primary),true);
+                    Send(new {type="notice",message=positioned?"Blitzkarte in Firefox geöffnet. Zum Schließen das Firefox-Fenster schließen.":"Blitzkarte geöffnet; Fensterposition bitte prüfen.",error=!positioned});
                     break;
             }
         }
         catch (OperationCanceledException) { if (id is not null) Send(new { type = "error", id, message = "Abfrage abgebrochen oder Zeitüberschreitung." }); }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
+            if(messageType=="lightning"){Send(new {type="notice",message="Blitzkarte konnte nicht in Firefox geöffnet werden. Firefox und Internetverbindung prüfen.",error=true});return;}
             bool serviceError = messageType?.StartsWith("service", StringComparison.Ordinal) == true;
             Send(new { type = messageType?.StartsWith("display") == true || messageType == "menu" ? "settingsError" : serviceError ? "serviceError" : "error", id, message = serviceError
                 ? "Dienst konnte nicht geöffnet oder die Auswahl nicht gespeichert werden. Bitte erneut versuchen."
                 : "Dienst nicht erreichbar oder Daten unvollständig. Bitte erneut versuchen." });
         }
+    }
+    private async Task OpenFirefoxAsync(string url)
+    {
+        if(!await FirefoxLauncher.OpenAsync(url))Send(new {type="notice",message="Firefox geöffnet; Fensterposition bitte prüfen.",error=true});
     }
     private void SendLinks(string? id) => Send(new { type = "links", id, data = links.Links, warning = links.Warning });
     private void SendServices() => Send(new { type = "services", data = services.Snapshot(), warning = services.Warning });
@@ -282,16 +281,22 @@ public sealed partial class MainWindow : Window
         switch (action)
         {
             case "tactical": CloseTactical(); break;
-            case "system": await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:")); break;
-            case "web": FirefoxLauncher.OpenHome(); break;
+            case "system":
+                if(!await ExternalWindows.LaunchAsync("SystemSettings",async()=>{if(!await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:")))throw new IOException("Windows-Einstellungen konnten nicht geöffnet werden.");}))
+                    Send(new {type="notice",message="Windows-Einstellungen geöffnet; Fensterposition bitte prüfen.",error=true});
+                break;
+            case "web": await OpenFirefoxAsync("about:home"); break;
             case "maps":
                 var targetPlace = message.GetProperty("place").Deserialize<GeoPlace>(Json) ?? GeoPlace.Vienna;
                 targetPlace.Validate();
                 await OpenTacticalAsync(new LaunchLink("maps", "Google Maps", FormattableString.Invariant($"https://www.google.com/maps/search/?api=1&query={targetPlace.Latitude},{targetPlace.Longitude}"), false)); break;
-            case "data": System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe") { UseShellExecute = true }); break;
+            case "data":
+                if(!await ExternalWindows.LaunchAsync("explorer",()=>{System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe") { UseShellExecute = true });return Task.CompletedTask;}))
+                    Send(new {type="notice",message="Explorer geöffnet; Fensterposition bitte prüfen.",error=true});
+                break;
             case "photos": case "calendar":
                 var service = Settings.PersonalServices.Available.Single(s => s.Id == action);
-                if (FirefoxLauncher.Find() is not null) FirefoxLauncher.Open(service.Url);
+                if (FirefoxLauncher.Find() is not null) await OpenFirefoxAsync(service.Url);
                 else await Windows.System.Launcher.LaunchUriAsync(new Uri(service.Url));
                 break;
             case "desktop": ShowDesktop(); break;
@@ -320,8 +325,8 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.0"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.0" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.2"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.2" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
         catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
         finally { updateBusy = false; }

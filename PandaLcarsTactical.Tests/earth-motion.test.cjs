@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict');
+const Motion=require('../PandaLcarsTactical/Assets/Web/earth-motion.js');
+const m=new Motion();let sum=0;
+for(let t=0;t<=300000;t+=20)sum+=m.step(t);
+assert(Math.abs(sum-2*Math.PI)<1e-8);
+m.pause(300000);assert.equal(m.step(314999),0);assert(m.step(315000)>0);
+m.holding=true;assert.equal(m.step(315100),0);m.holding=false;
+m.enabled=false;assert.equal(m.step(315200),0);m.enabled=true;
+m.earth=false;assert.equal(m.step(315300),0);m.earth=true;
+assert.equal(m.step(315400,false),0);
+assert(m.step(999999)<=100*2*Math.PI/300000);
+console.log('PASS five-minute rotation, 15-second pause, held input, toggle, target mode, hidden tab and resume bound');

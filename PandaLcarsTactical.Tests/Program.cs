@@ -8,6 +8,14 @@ var fixture = """
 void Check(bool ok,string label) { if(!ok)throw new Exception(label); Console.WriteLine("PASS " + label); }
 WeatherReport Parse(string json) { using var d=JsonDocument.Parse(json); return OpenMeteoProvider.Parse(d.RootElement,GeoPlace.Vienna); }
 var r=Parse(fixture);
+Check(r.Celestial?.Sunrise is not null && r.Celestial.Sunset is not null, "Weather includes local sun and moon calculations");
+var polar = CelestialTimes.Calculate(new("Tromsø",69.6492,18.9553),new(2026,6,21),"Europe/Oslo");
+Check(polar.Sunrise is null && polar.Sunset is null,"Midnight sun does not invent rise/set events");
+foreach(var entry in new[]{(GeoPlace.Vienna,"Europe/Vienna",new DateOnly(2026,3,29)),(GeoPlace.Vienna,"Europe/Vienna",new DateOnly(2026,10,25)),(new GeoPlace("Delhi",28.6139,77.209),"Asia/Kolkata",new DateOnly(2026,9,27)),(new GeoPlace("Auckland",-36.85,174.76),"Pacific/Auckland",new DateOnly(2026,9,27))}){
+ var times=CelestialTimes.Calculate(entry.Item1,entry.Item3,entry.Item2);
+ Check(new[]{times.Sunrise,times.Sunset,times.Moonrise,times.Moonset}.All(t=>t is null || DateOnly.FromDateTime(t.Value.DateTime)==entry.Item3),"Events stay within selected local date including DST/half-hour offsets");
+ Check(times.Sunrise is {} sr && times.Sunset is {} ss && sr<ss,"Sunrise precedes sunset at test locations");
+}
 Check(r.Current.ValidAt.UtcDateTime.Hour==10 && r.Current.ValidAt.Minute==30,"Local API timestamp converted to UTC");
 Check(r.Daily.Count==3 && r.Daily[2].Date==new DateOnly(2026,9,27),"Three local forecast dates preserved");
 Check(r.Current.IntervalMinutes==15,"Precipitation interval retained");
@@ -57,6 +65,8 @@ try
  var displays = new PandaLcarsTactical.Settings.DisplaySettings(displayFile);
  var sampleDisplays = new List<PandaLcarsTactical.Settings.MonitorChoice> {new("primary","Monitor 1",0,0,1920,1080,true),new("second","Monitor 5",0,-1080,1920,1080,false),new("stable-third","Monitor 9",1920,0,1920,1080,false)};
  Check(displays.Preferred(sampleDisplays)?.Id == "stable-third", "Default selects Monitor 3");
+ Check(PandaLcarsTactical.Browser.ExternalWindows.UpperMonitor(sampleDisplays)?.Id == "second", "External windows select upper monitor rather than LCARS screen");
+ Check(PandaLcarsTactical.Browser.ExternalWindows.UpperMonitor(sampleDisplays.Where(m=>m.Id!="second").ToList())?.Id == "primary", "External window fallback selects primary monitor");
  displays.Save("stable-third",true);
  displays = new PandaLcarsTactical.Settings.DisplaySettings(displayFile);
  sampleDisplays[2] = sampleDisplays[2] with {Name="Monitor 2"};

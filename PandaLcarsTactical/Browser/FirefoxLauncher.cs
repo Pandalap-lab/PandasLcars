@@ -6,10 +6,16 @@ namespace PandaLcarsTactical.Browser;
 
 public static class FirefoxLauncher
 {
-    public static void OpenHome()
+    public static Task<bool> OpenHomeAsync() => OpenAsync("about:home");
+    public static Task<bool> OpenAsync(string url, PandaLcarsTactical.Settings.MonitorChoice? monitor = null, bool small = false)
     {
         var executable = Find() ?? throw new InvalidOperationException("Firefox nicht gefunden. Bitte Firefox installieren.");
-        Process.Start(new ProcessStartInfo(executable) { UseShellExecute = false });
+        var normalized = url == "about:home" ? url : LinkStore.NormalizeUrl(url);
+        return ExternalWindows.LaunchAsync("firefox", () => {
+            var start = new ProcessStartInfo(executable) { UseShellExecute = false };
+            start.ArgumentList.Add("--new-window");start.ArgumentList.Add(normalized);
+            Process.Start(start);return Task.CompletedTask;
+        }, monitor, small);
     }
     public static string? Find()
     {
@@ -27,13 +33,5 @@ public static class FirefoxLauncher
             if (File.Exists(path)) return path;
         }
         return null;
-    }
-    public static void Open(string url)
-    {
-        var executable = Find() ?? throw new InvalidOperationException("Firefox nicht gefunden. Bitte Firefox installieren oder den Link manuell kopieren.");
-        var start = new ProcessStartInfo(executable) { UseShellExecute = false };
-        start.ArgumentList.Add("-new-tab");
-        start.ArgumentList.Add(LinkStore.NormalizeUrl(url));
-        Process.Start(start);
     }
 }

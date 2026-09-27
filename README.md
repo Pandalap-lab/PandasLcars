@@ -20,7 +20,7 @@ Settings bietet Browserlinks zu Google Fotos, Outlook-Kalender und Facebook. Die
 
 GitHub Actions prüft Kernfunktionen und Zoom und erstellt Windows-x64-App,
 Installer, portable ZIP und SHA-256-Prüfsummen. Push auf `main` erzeugt ein
-Build-Artefakt. Ein Tag passend zur Projektversion, z. B. `v0.5.1`, veröffentlicht
+Build-Artefakt. Ein Tag passend zur Projektversion, z. B. `v0.6.2`, veröffentlicht
 nach erfolgreichem Build einen Release. Dafür ist kein persönlicher Token im
 Quellcode nötig. Die Dateien sind derzeit **nicht Authenticode-signiert**.
 
@@ -50,9 +50,23 @@ Navigation: 02 Windows-Einstellungen, 03 Google Maps im Tactical-Browser, 05 Exp
 06 Google Fotos und 07 Outlook-Kalender im persönlichen Browser, 08 Desktop,
 09 App-Settings, 10 Neustart/Herunterfahren mit Bestätigung. Es werden keine
 persönlichen E-Mail-Adressen vorgegeben; der Browser verwendet das angemeldete Konto.
-04 bleibt ohne Zuordnung. Eigene Links behalten die bestehende lokale Speicherung.
+04 WEB öffnet Firefox. Eigene Links behalten die bestehende lokale Speicherung.
 Favicons werden direkt von der jeweiligen HTTPS-Website geladen (ohne Referer);
 dabei erhält diese Website die üblichen Verbindungsdaten. Fehlende Icons zeigen Initialen.
 
 Das Setup enthält eine Deinstallation. Benutzerdaten bleiben bei Updates und
 Deinstallation erhalten; ein vom Setup angelegter Autostart-Eintrag wird entfernt.
+
+### Drittanbieter im Update 0.6.2
+- Oswald-Schrift: Copyright 2016 The Oswald Project Authors, SIL Open Font License 1.1; vollständige Lizenz unter Assets/Web/fonts/OFL.txt.
+- NASA Earth Observatory / Black Marble 2016: statisches Nachtlichtmosaik, kein Livebild. https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/
+- Astronomy Engine 2.1.19: Copyright (c) 2019-2022 Don Cross, MIT-Lizenz. https://github.com/cosinekitty/astronomy
+
+Astronomy Engine MIT License:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Aktuell: 0.6.2
+
+Änderungen, Bedienung und Prüfgrenzen: [Update 0.6.2](docs/release-0.6.2.md).

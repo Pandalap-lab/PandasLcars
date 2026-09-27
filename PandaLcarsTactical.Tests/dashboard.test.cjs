@@ -4,7 +4,7 @@ const assets=path.resolve(__dirname,'../PandaLcarsTactical/Assets');
 const server=http.createServer((req,res)=>{
  const file=path.resolve(assets,'.'+decodeURIComponent(req.url.split('?')[0]));
  if(!file.startsWith(assets+path.sep)){res.writeHead(403).end();return;}
- const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.json':'application/json','.wasm':'application/wasm'};
+ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.wasm':'application/wasm'};
  res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');
  fs.createReadStream(file).on('error',()=>res.end()).pipe(res);
 });
@@ -56,6 +56,27 @@ const server=http.createServer((req,res)=>{
   await page.locator('#closeAppSettings').click();
   assert(!(await page.locator('#appSettings').evaluate(el=>el.open)));
   console.log('PASS browser links without account status and return');
+  await page.evaluate(()=>{
+   report={timezone:'Asia/Kolkata',celestial:{date:'2026-09-27',sunrise:'2026-09-27T00:40:00Z',sunset:'2026-09-27T12:40:00Z',moonrise:null,moonset:'2026-09-27T01:00:00Z'}};
+   renderCelestial();
+  });
+  assert((await page.locator('#celestialTimes').innerText()).includes('Sonne ↑ 06:10'));
+  assert((await page.locator('#celestialTimes').innerText()).includes('Mond ↑ —'));
+  assert((await page.locator('#celestialTimes').innerText()).includes('27.09.2026'));
+  console.log('PASS celestial local time, date and absent event');
+  assert(await page.evaluate(()=>viewer.scene.globe.enableLighting&&nightLayer.dayAlpha===0&&nightLayer.nightAlpha===1));
+  await page.locator('#center').click();
+  assert(await page.evaluate(()=>!earthMotion.earth&&!viewer.scene.globe.enableLighting&&!nightLayer.show));
+  await page.locator('#earth').click();
+  assert(await page.evaluate(()=>earthMotion.earth&&viewer.scene.globe.enableLighting&&nightLayer.show));
+  await page.locator('#earth').click();
+  assert(await page.evaluate(()=>earthMotion.earth&&!earthMotion.enabled&&document.querySelector('#earth').getAttribute('aria-pressed')==='false'&&!document.querySelector('#earthRotation').checked&&localStorage.getItem('panda.earthRotation')==='false'));
+  await page.locator('#earth').click();
+  assert(await page.evaluate(()=>earthMotion.enabled&&earthMotion.resumeAt<=performance.now()&&document.querySelector('#earth').getAttribute('aria-pressed')==='true'&&document.querySelector('#earthRotation').checked&&localStorage.getItem('panda.earthRotation')==='true'));
+  console.log('PASS EARTH button stops and restarts rotation; settings and persistence synchronized');
+  await page.locator('#lightningOpen').click();
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='lightning'&&x.place.name==='Wien')));
+  console.log('PASS EARTH lighting, target mode and external lightning request');
   for(const action of ['tactical','system','maps','web','data','photos','calendar','desktop','power']) {
    await page.locator('[data-action="'+action+'"]').click();
    assert(await page.evaluate(action=>testSent.some(x=>x.type==='menu'&&x.action===action),action));
@@ -98,11 +119,22 @@ const server=http.createServer((req,res)=>{
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=0);
   const shot=path.resolve(__dirname,'../qa');fs.mkdirSync(shot,{recursive:true});
   await page.screenshot({path:path.join(shot,'dashboard-1500.png')});
-  for(const [width,height] of [[1200,740],[950,590],[1920,1080]]){
+  await page.locator('#layers').click();
+  await page.locator('#layers').click();
+  for(const [width,height] of [[1280,720],[1200,740],[950,590],[1920,1080]]){
    await page.setViewportSize({width,height});
    await page.waitForFunction(()=>{const r=document.querySelector('#quickLinks').getBoundingClientRect();return [...document.querySelectorAll('#quickLinks button')].filter(b=>{const q=b.getBoundingClientRect();return q.top>=r.top-1&&q.bottom<=r.bottom+1}).length===8;});
    assert.equal(await visible(),8);
    assert(await page.locator('#quickLinks').evaluate(el=>el.clientHeight>0));
+   for(const id of ['weatherOn','weatherOff','radar','clouds','rain','heat']){
+    assert(await page.locator('#'+id).isVisible(),id+' stays visible after repeated LAYERS clicks');
+    const bounds=await page.locator('#'+id).boundingBox();
+    assert(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=width&&bounds.y+bounds.height<=height,id+' within viewport');
+   }
+   const aligned=await page.evaluate(()=>{
+    const box=s=>document.querySelector(s).getBoundingClientRect();
+    return Math.abs(box('.targets').right-box('.tactical').right)<1&&Math.abs(box('.quick').left-box('.forecast').left)<1&&Math.abs(box('.quick').right-box('.forecast').right)<1;
+   });assert(aligned,'Shared panel edges');
   }
   console.log('PASS eight-tile layout at 950x590, 1200x740, 1500x940 and 1920x1080');
   await page.screenshot({path:path.join(shot,'dashboard-1920.png')});
