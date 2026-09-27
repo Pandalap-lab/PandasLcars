@@ -34,18 +34,14 @@
   if (m.type === "serviceError") { $("serviceWarning").textContent = m.message; return; }
   if (m.type !== "services") return;
   $("serviceRows").replaceChildren();
-  const active = m.data.filter(s => s.enabled);
-  $("serviceSummary").textContent = active.length ? "DIENSTE · " + active.length + " IM BROWSER · STATUS ?" : "DIENSTE · NICHT EINGERICHTET";
+  $("serviceSummary").textContent = "DIENSTE · IM BROWSER ÖFFNEN";
   $("serviceWarning").textContent = m.warning ?? "";
   for (const s of m.data) {
    const row = document.createElement("section"); row.className = "service-row";
    const title = document.createElement("strong"); title.textContent = s.name;
-   const state = document.createElement("small"); state.textContent = s.status;
-   const open = document.createElement("button"); open.textContent = s.enabled ? "DIENST / ANMELDUNG ÖFFNEN" : "IM BROWSER EINRICHTEN";
+   const open = document.createElement("button"); open.textContent = "IM BROWSER ÖFFNEN";
    open.onclick = () => send("serviceOpen", {serviceId:s.id});
-   const remove = document.createElement("button"); remove.textContent = "ZUORDNUNG ENTFERNEN"; remove.disabled = !s.enabled;
-   remove.onclick = () => send("serviceRemove", {serviceId:s.id});
-   row.append(title, state, open, remove); $("serviceRows").append(row);
+   row.append(title, open); $("serviceRows").append(row);
   }
  });
  send("services");

@@ -13,7 +13,7 @@
 - Atomare lokale Speicherung mit begrenzter Wiederholung bei kurzfristigen Dateisperren.
 
 ## Externe Voraussetzungen / offen
-- Echte OAuth-Kontoanbindung: eigene Google-/Microsoft-Client-IDs und passende Desktop-Appregistrierungen erforderlich; derzeit nicht vorhanden/verifiziert. Browseranmeldungen bleiben ausdrücklich ungeprüft.
+- Kontoverknüpfung auf Nutzerwunsch verworfen. Dienste sind Browserlinks ohne Kontostatus; keine Client-IDs nötig.
 - Signierung: kein kostenpflichtiger Dienst und keine Store-Veröffentlichung gewünscht. Installer bleibt unsigniert.
 - Ein vollständiger Windows-Neustart und Prüfung während der Anmeldung ist separat nötig.
 

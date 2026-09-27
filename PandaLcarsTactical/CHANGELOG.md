@@ -8,7 +8,7 @@
 - Quicklaunch-Favicons, NCC-080470, OSM-Appkennung/Referer ergänzt.
 - Dateispeicherung bei vorübergehenden Dateisperren stabilisiert.
 - Wetter, Weltkugel, US-Panda-Bild und Spock-Panda-Appsymbol erhalten.
-- OAuth bleibt von eigenen registrierten Client-IDs abhängig; kein fingierter Kontostatus.
+- Kontoverknüpfung auf Nutzerwunsch verworfen: Dienste als Browserlinks ohne Kontostatus und ohne Client-IDs.
 # 0.5.1 – Veröffentlichung
 
 - Grafik- und Größenänderungstests für virtuelle Windows-Buildrechner stabilisiert.

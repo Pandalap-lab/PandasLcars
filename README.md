@@ -14,17 +14,7 @@ Runtime installieren: https://developer.microsoft.com/microsoft-edge/webview2/
 
 ## Persönliche Dienste
 
-Settings öffnet persönliche Zugänge zu Google Fotos, Outlook Kalender und Facebook.
-Die Anmeldung erfolgt im Browser, bevorzugt Firefox. Gespeichert werden nur die
-ausgewählten Dienste, keine E-Mail-Adresse und kein Passwort.
-Die Startseite zeigt den Einrichtungsstatus. **Eine externe Browseranmeldung kann
-die App nicht verifizieren**; sie zeigt daher ausdrücklich „Status unbekannt“.
-Das Entfernen einer Zuordnung meldet nicht aus dem Browser ab.
-
-Eine integrierte OAuth-Kontoanbindung mit geprüftem Verbindungsstatus ist noch
-nicht enthalten. Dafür sind eigene registrierte Google-/Microsoft-Anwendungen
-und die jeweiligen Zustimmungen erforderlich. Es werden weder fremde Client-IDs
-noch Umgehungen für eingebettete Anmeldungen verwendet.
+Settings bietet Browserlinks zu Google Fotos, Outlook-Kalender und Facebook. Die Dienste öffnen sich bevorzugt in Firefox und verwenden die dort vorhandene Anmeldung. PandasLcars zeigt keinen Kontostatus und benötigt keine OAuth-Appregistrierungen oder Client-IDs. Kontoverknüpfungen sind auf Nutzerwunsch entfallen.
 
 ## Build
 

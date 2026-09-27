@@ -37,6 +37,5 @@ public sealed class PersonalServices
         AtomicFile.Write(path, JsonSerializer.Serialize(next));
         enabled = next;
     }
-    public object Snapshot() => Available.Select(s => new { s.Id, s.Name, enabled = IsEnabled(s.Id),
-        status = IsEnabled(s.Id) ? "IM BROWSER · STATUS UNBEKANNT" : "NICHT EINGERICHTET" }).ToArray();
+    public object Snapshot() => Available.Select(s => new { s.Id, s.Name }).ToArray();
 }

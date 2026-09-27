@@ -151,7 +151,6 @@ public sealed partial class MainWindow : Window
                     if (FirefoxLauncher.Find() is not null) { FirefoxLauncher.Open(service.Url); launched = true; }
                     else launched = await Windows.System.Launcher.LaunchUriAsync(new Uri(service.Url));
                     if (!launched) throw new IOException("Browser konnte nicht geöffnet werden.");
-                    services.SetEnabled(service.Id, true);
                     SendServices();
                     break;
                 case "serviceRemove":

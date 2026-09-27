@@ -46,17 +46,16 @@ const server=http.createServer((req,res)=>{
   assert(await page.locator('#startAutostart').isChecked());
   await page.locator('#saveDisplay').click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='displaySave'&&x.monitorId==='monitor-test'&&x.fullscreen&&x.autostart)));
-  await page.getByRole('button',{name:'IM BROWSER EINRICHTEN',exact:true}).click();
+  await page.getByRole('button',{name:'IM BROWSER ÖFFNEN',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='serviceOpen'&&x.serviceId==='photos')));
   await page.evaluate(()=>testMessage({type:'services',data:[{id:'photos',name:'Google Fotos',enabled:true,status:'IM BROWSER · STATUS UNBEKANNT'}]}));
-  assert((await page.locator('#serviceSummary').innerText()).includes('STATUS ?'));
-  await page.getByRole('button',{name:'ZUORDNUNG ENTFERNEN',exact:true}).click();
-  assert(await page.evaluate(()=>testSent.some(x=>x.type==='serviceRemove'&&x.serviceId==='photos')));
+  assert.equal(await page.locator('#serviceSummary').innerText(),'DIENSTE · IM BROWSER ÖFFNEN');
+  assert(!(await page.locator('#serviceRows').innerText()).includes('STATUS'));
   fs.mkdirSync(path.resolve(__dirname,'../qa'),{recursive:true});
   await page.screenshot({path:path.resolve(__dirname,'../qa/settings-1500.png')});
   await page.locator('#closeAppSettings').click();
   assert(!(await page.locator('#appSettings').evaluate(el=>el.open)));
-  console.log('PASS services settings, truthful status, remove and return');
+  console.log('PASS browser links without account status and return');
   for(const action of ['tactical','system','maps','web','data','photos','calendar','desktop','power']) {
    await page.locator('[data-action="'+action+'"]').click();
    assert(await page.evaluate(action=>testSent.some(x=>x.type==='menu'&&x.action===action),action));
