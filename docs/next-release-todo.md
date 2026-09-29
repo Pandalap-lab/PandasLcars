@@ -35,8 +35,11 @@ Auftrag und Sammelfreigabe: sämtliche untenstehenden Änderungen, lokale Tests,
 - [x] Erster Durchlauf gegen Quell-Assets: Funktions-, Pixel-, Temperatur-, Abstands-, Einzeiligkeits- und Größenprüfungen.
 - [x] Zweiter Durchlauf gegen veröffentlichbare Dateien in artifacts/v065/Assets erfolgreich.
 - [x] CI muss diese zweite Prüfung unmittelbar nach dotnet publish ausführen; bei Fehler keine Veröffentlichung. Screenshots auch bei Erfolg aufbewahren.
-- [ ] GitHub: Upgrade von 0.6.4, erneute Installation, Deinstallation, eigene Links und Monitor-Einstellungen erhalten.
-- [ ] Echten UpdateClient gegen öffentliche 0.6.5 testen, Installer herunterladen und SHA-256 prüfen.
-- [ ] Release veröffentlichen und installierbaren Download bereitstellen. Die vorhandene Installation nicht ungefragt ersetzen.
+- [x] GitHub: Upgrade von 0.6.4, erneute Installation, Deinstallation, eigene Links und Monitor-Einstellungen erhalten.
+- [x] Echten UpdateClient gegen öffentliche 0.6.5 testen, Installer herunterladen und SHA-256 prüfen.
+- [x] Release veröffentlichen und installierbaren Download bereitstellen. Die vorhandene Installation nicht ungefragt ersetzen.
 
 Gerätegrenzen: Die Sichtprüfung startet einen lokalen Build ohne Installer. Ein späterer echter Windows-Kaltstart sowie Nortons Verhalten beim neuen Setup müssen am Gerät bestätigt werden. Automatische Tests sind dafür kein Ersatz.
+
+
+Abschluss 29.09.2026: Release v0.6.5, Commit 602f30f, GitHub-Run 36620241253 vollständig erfolgreich. Finaler Windows-Sichttest bestätigt auch die festen Pfeil-/Zeitspalten in der Schrift von 0.6.4. Echter UpdateClient bietet 0.6.5 für 0.6.0 bis 0.6.4 an und kein Update für 0.6.5. Installer vollständig heruntergeladen und SHA-256 verifiziert. Keine Installation auf dem Laptop durch diesen Test.
