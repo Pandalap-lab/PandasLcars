@@ -14,7 +14,7 @@ public static class MapRequestPolicy
             if (!Uri.TryCreate(e.Request.Uri, UriKind.Absolute, out var target) ||
                 !(target.Host == "tile.openstreetmap.org" || target.Host.EndsWith(".tile.openstreetmap.org", StringComparison.OrdinalIgnoreCase))) return;
             e.Request.Headers.SetHeader("X-Requested-With", "Pandalap-lab.PandasLcars");
-            e.Request.Headers.SetHeader("User-Agent", core.Settings.UserAgent + " PandasLcars/0.6.3 (+https://github.com/Pandalap-lab/PandasLcars)");
+            e.Request.Headers.SetHeader("User-Agent", core.Settings.UserAgent + " PandasLcars/0.6.4 (+https://github.com/Pandalap-lab/PandasLcars)");
             if (!e.Request.Headers.Contains("Referer") && Uri.TryCreate(documentUrl(), UriKind.Absolute, out var source) && source.Scheme == "https")
                 e.Request.Headers.SetHeader("Referer", source.GetLeftPart(UriPartial.Authority) + "/");
         };

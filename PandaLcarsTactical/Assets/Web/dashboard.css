@@ -97,3 +97,28 @@ dialog{color:#acd5ff;background:#02080f;border:2px solid #748eec;border-radius:1
 .metric-icon{width:15px;height:15px;vertical-align:middle;display:inline-block}
 #updateNotice{position:fixed;z-index:50;top:75px;left:20%;right:20%;padding:18px;background:#071929;border:2px solid #ffb541;border-radius:12px;color:#ffbd61;font-size:17px;text-align:center}
 @media(min-height:661px){.weather-table{font-size:11px}.weather-line b{font-size:13px}.celestial-times{font-size:10px}.celestial-events b{font-size:13px}.celestial-events>span{padding:2px 5px}}
+/* 0.6.4: map gains height; weather and astronomy share one compact band. */
+.weather-dock{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);gap:3px 7px;padding:4px 6px}
+.weather-compact{min-width:0}.celestial-panel{min-width:0;border-left:1px solid #247697;padding-left:6px}
+.celestial-panel h2{font-size:13px;padding:4px 7px;margin:0 0 3px}
+.weather-top{flex-wrap:wrap;gap:3px}.weather-top h2{flex-basis:100%;font-size:13px}
+.weather-top>button{min-height:20px;padding:1px 5px;font-size:10px}.weather-top .switch-group{font-size:9px}.weather-top .switch-group button{min-height:20px;padding:1px 4px;min-width:24px}
+.weather-body{grid-template-columns:65px minmax(0,1fr);gap:3px;padding:3px 0}
+.weather-reading{gap:2px;flex-direction:row}.weather-reading strong{font-size:18px}#currentWeatherIcon{font-size:17px}
+.weather-table{font-size:10px}.weather-line>span{padding:2px 3px;display:flex;align-items:center;gap:3px;flex:auto}.weather-line b{display:inline;font-size:10px;white-space:nowrap}.metric-icon{width:11px;height:11px;flex-shrink:0}
+.weather-line>span{flex-wrap:wrap}.weather-line>span b{margin-left:auto}.weather-layers{justify-content:flex-start;gap:3px;flex-wrap:wrap;margin:0}.weather-layers>button,.lightning-switch button{font-size:9px;min-height:21px;padding:2px 4px}
+.celestial-times{border:0;padding:0;font-size:10px}.celestial-heading{white-space:normal;font-size:9px!important;line-height:1.35;max-height:26px;overflow:hidden}
+.celestial-events{grid-template-columns:repeat(2,minmax(0,1fr))}.celestial-events>span{display:flex;align-items:center;justify-content:space-between;gap:3px;white-space:nowrap;padding:5px 3px;font-size:10px}.celestial-events b{display:inline;font-size:11px}.celestial-events>span:nth-child(3){border-left:0}.celestial-events>span:nth-child(n+3){border-top:1px solid #247697}
+.celestial-status{display:flex;flex-wrap:wrap;gap:2px 5px;font-size:9px}.celestial-status>span+span{padding-left:5px}
+.weather-status,.radar-status{grid-column:1/-1}.weather-status{padding:0;min-height:10px}
+.map-scale{left:10px;right:auto;bottom:24px;max-width:calc(100% - 125px);z-index:2;text-shadow:0 1px 2px #000;background:transparent}
+.map-controls{z-index:4}.map-controls #layers{border-color:#69cfff;color:#9dccff}
+#layerOptions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px}#layerDialog button{min-height:44px}
+#issStatus{position:absolute;left:10px;bottom:44px;max-width:calc(100% - 120px);font-size:9px;pointer-events:none;color:#79dfff;background:#0009;padding:2px 4px;z-index:2}
+@media(min-width:1450px){.weather-table,.weather-line b{font-size:12px}.celestial-events>span,.celestial-events b{font-size:12px}.weather-body{grid-template-columns:90px minmax(0,1fr)}.weather-reading strong{font-size:23px}}
+@media(max-width:1100px){.weather-dock{grid-template-columns:minmax(0,1.8fr) minmax(0,1fr)}.weather-table,.weather-line b{font-size:9px}.weather-body{grid-template-columns:50px minmax(0,1fr)}.weather-reading{flex-direction:column}.weather-reading strong{font-size:15px}.celestial-events{grid-template-columns:1fr}.celestial-events>span{padding:1px 3px}.celestial-events>span+span{border-left:0}.metric-icon{display:none}.celestial-heading{font-size:8px!important}}
+/* Condensed labels keep inline values readable on the 720p target monitor. */
+.weather-table,.celestial-times{font-family:PandaCondensed,"Arial Narrow",sans-serif}
+.weather-table,.weather-line b{font-size:12px}.weather-line>span{flex-wrap:nowrap;gap:4px}.weather-line>span b{margin-left:0}.weather-line>span{flex:1;white-space:nowrap}
+.celestial-events>span,.celestial-events b{font-size:12px}.celestial-events>span{justify-content:flex-start;gap:5px}
+@media(max-width:1100px){.weather-table,.weather-line b{font-size:10px}.weather-line>span{gap:2px}.celestial-events>span,.celestial-events b{font-size:11px}}

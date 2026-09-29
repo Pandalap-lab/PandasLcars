@@ -36,6 +36,7 @@ public sealed partial class MainWindow : Window
     private bool initialPresentationApplied;
     private Updates.UpdateRelease? availableUpdate;
     private bool updateBusy;
+    private IssOrbitService? issOrbit;
     public MainWindow()
     {
         InitializeComponent();
@@ -141,6 +142,10 @@ public sealed partial class MainWindow : Window
                     display.Save(monitorId == "auto" ? null : monitorId, message.GetProperty("fullscreen").GetBoolean());
                     displayTimer.Stop(); PlaceOnMonitor(); SendDisplay(); break;
                 case "menu": await OpenMenuAsync(message.GetProperty("action").GetString() ?? "", message); break;
+                case "issOrbit":
+                    try { Send(new { type = "issOrbit", data = await (issOrbit ??= new IssOrbitService(http)).GetAsync() }); }
+                    catch { Send(new { type = "issOrbit", error = "Bahndaten nicht verfügbar" }); }
+                    break;
                 case "updateCheck": await CheckUpdateAsync(); break;
                 case "updateDownload": await DownloadUpdateAsync(); break;
                 case "services": SendServices(); break;
@@ -325,8 +330,8 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.3"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.3" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.4"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.4" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
         catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
         finally { updateBusy = false; }
@@ -334,25 +339,28 @@ public sealed partial class MainWindow : Window
     private async Task DownloadUpdateAsync()
     {
         if (updateBusy || availableUpdate is null) return;
-        updateBusy = true; Send(new { type = "update", state = "downloading", message = "UPDATE WIRD GELADEN …" });
+        updateBusy = true; Send(new { type = "update", state = "downloading", message = "UPDATE WIRD GELADEN · Sicherheitssoftware kann den Download und Start prüfen. Bitte nicht mehrfach starten." });
         try
         {
             var installer = await new Updates.UpdateClient(http).DownloadAsync(availableUpdate);
-            Send(new { type = "update", state = "available", message = "UPDATE GEPRÜFT · BEREIT" });
-            var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "Update installieren", Content = "Download und SHA-256-Prüfung abgeschlossen. PandasLcars wird geschlossen und das Setup gestartet. Einstellungen bleiben erhalten. Der Installer ist nicht digital signiert; Windows oder Norton können ihn prüfen oder blockieren.", PrimaryButtonText = "Installieren", CloseButtonText = "Später", DefaultButton = ContentDialogButton.Close };
+            Send(new { type = "update", state = "confirming", message = "UPDATE GEPRÜFT · BEREIT" });
+            var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "Update installieren", Content = "Download und SHA-256-Prüfung abgeschlossen. Das Setup wird gestartet; PandasLcars wartet auf dessen Abschluss. Einstellungen bleiben erhalten. Der Installer ist nicht digital signiert; Windows oder Norton können ihn prüfen oder blockieren.", PrimaryButtonText = "Installieren", CloseButtonText = "Später", DefaultButton = ContentDialogButton.Close };
             if (await dialog.ShowAsync() == ContentDialogResult.Primary)
             {
                 Send(new { type = "update", state = "starting", message = "Installer wird gestartet – die Sicherheitsprüfung kann einen Moment dauern. Bitte warten." });
-                await Task.Run(() =>
+                var exitCode = await Task.Run(async () =>
                 {
                     using var setup = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installer) { UseShellExecute = true });
                     if (setup is null) throw new IOException("Installer konnte nicht gestartet werden.");
+                    await setup.WaitForExitAsync();
+                    return setup.ExitCode;
                 });
-                await Task.Delay(3000);
+                if (exitCode != 0) throw new IOException("Setup abgebrochen (Exitcode " + exitCode + ").");
                 Close();
             }
+            else Send(new { type = "update", state = "available", message = "UPDATE BEREIT · SPÄTER INSTALLIEREN" });
         }
-        catch { Send(new { type = "update", state = "available", message = "UPDATE NICHT GESTARTET · ERNEUT VERSUCHEN" }); }
+        catch { Send(new { type = "update", state = "available", message = "Setup nicht abgeschlossen. Bei Fehler 5: Zugriff verweigert – Sicherheitsprüfung abwarten und Norton-Verlauf prüfen. Danach erneut versuchen; gegebenenfalls das geprüfte Setup manuell als Administrator starten. Schutz bleibt eingeschaltet." }); }
         finally { updateBusy = false; }
     }
     private async Task RefreshSystemAsync()

@@ -18,8 +18,8 @@
  window.chrome?.webview?.addEventListener("message", ({data:m}) => {
   if (m.type === "update") {
    $("updateStatus").textContent = m.state === "starting" ? "INSTALLER STARTET …" : m.message;
-   $("updateNotice").hidden=m.state!=="starting";$("updateNotice").textContent=m.message;
-   $("updateCheck").disabled = ["checking","downloading","starting"].includes(m.state);
+   $("updateNotice").hidden=!["downloading","confirming","starting"].includes(m.state)&&!m.message.startsWith("Setup nicht abgeschlossen");$("updateNotice").textContent=m.message;
+   $("updateCheck").disabled = ["checking","downloading","confirming","starting"].includes(m.state);
    $("updateDownload").disabled = m.state !== "available";
    $("updateCheck").textContent = m.state === "available" ? "UPDATE VORHANDEN" : "UPDATES SUCHEN";
    eventFeed(m.message, m.state === "error"); return;

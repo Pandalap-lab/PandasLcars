@@ -112,7 +112,7 @@ const server=http.createServer((req,res)=>{
   console.log('PASS monitor settings, menu routing, update states, NCC lettering and icon slots');
   await page.getByRole('button',{name:'ARGOS ATLAS in Tactical öffnen',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='linkOpen'&&x.linkId==='5')));
-  assert.equal(await page.locator('#quickLinks img').nth(5).getAttribute('src'),'https://argosatlas.com/favicon.svg');
+  assert(new URL(await page.locator('#quickLinks img').nth(5).getAttribute('src')).hostname==='argosatlas.com');
   assert.equal(await visible(),8);console.log('PASS exactly eight visible quicklaunch tiles');
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=el.scrollHeight);
   assert(await page.locator('#quickLinks').evaluate(el=>el.scrollTop>0));assert.equal(await visible(),8);
@@ -120,7 +120,8 @@ const server=http.createServer((req,res)=>{
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='linkOpen'&&x.linkId==='11')));console.log('PASS scroll and open last link');
   await page.locator('#addLink').click();await page.locator('#linkName').fill('Neu');await page.locator('#linkUrl').fill('https://example.org/');await page.locator('#saveLink').click();
   await page.waitForFunction(()=>!document.querySelector('#linkDialog').open);assert.equal(await page.locator('#quickLinks button').count(),13);
-  await page.locator('#manageLinks').click();await page.locator('.manage-row').last().getByText('BEARBEITEN',{exact:true}).click();await page.locator('#linkName').fill('Geändert');await page.locator('#saveLink').click();await page.waitForFunction(()=>!document.querySelector('#linkDialog').open);
+  await page.locator('#manageLinks').click();await page.locator('.manage-row').last().getByText('BEARBEITEN',{exact:true}).click();await page.locator('#linkName').fill('Geändert');await page.locator('#linkUrl').fill('https://changed.example.net/');await page.locator('#saveLink').click();await page.waitForFunction(()=>!document.querySelector('#linkDialog').open);
+  assert(new URL(await page.locator('#quickLinks img').last().getAttribute('src')).hostname==='changed.example.net');
   await page.locator('#manageLinks').click();await page.locator('.manage-row').last().getByText('LÖSCHEN',{exact:true}).click();await page.locator('.manage-row').last().getByText('WIRKLICH LÖSCHEN?',{exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#quickLinks button').length===12);await page.locator('#closeManage').click();console.log('PASS add, edit, delete dialog wiring');
   for(const mode of ['WORK','STANDBY','WARP']){
    await page.evaluate(mode=>testMessage({type:'activity',data:{mode,since:new Date().toISOString(),idleSeconds:mode==='STANDBY'?180:0,load:22,warpRequested:mode==='WARP'}}),mode);
@@ -140,10 +141,32 @@ const server=http.createServer((req,res)=>{
   const shot=path.resolve(__dirname,'../qa');fs.mkdirSync(shot,{recursive:true});
   await page.screenshot({path:path.join(shot,'dashboard-1500.png')});
   await page.locator('#layers').click();
-  await page.locator('#layers').click();
+  assert(await page.locator('#layerDialog').evaluate(el=>el.open));
+  await page.locator('#layerOptions button[data-source="clouds"]').click();
+  assert.equal(await page.locator('#clouds').getAttribute('aria-pressed'),'true');
+  await page.locator('#closeLayers').click();
+  await page.locator('#layers').click();await page.locator('#closeLayers').click();
+  console.log('PASS LAYERS opens working selector and returns');
+  await page.evaluate(()=>{setEarthMode(true);setEarthRotation(true);testMessage({type:'issOrbit',data:JSON.stringify([{NORAD_CAT_ID:25544,EPOCH:new Date().toISOString().replace('Z',''),MEAN_MOTION:15.5,ECCENTRICITY:0.0008,INCLINATION:51.64,RA_OF_ASC_NODE:59.25,ARG_OF_PERICENTER:16.45,MEAN_ANOMALY:347.6,EPHEMERIS_TYPE:0,CLASSIFICATION_TYPE:'U',ELEMENT_SET_NO:999,REV_AT_EPOCH:17344,BSTAR:0.000059,MEAN_MOTION_DOT:0.00003,MEAN_MOTION_DDOT:0}])});});
+  await page.waitForFunction(()=>viewer.entities.values.some(e=>e.name==='ISS · berechnete Position'));
+  assert((await page.locator('#issStatus').innerText()).includes('berechnet'));
+  const issBefore=await page.evaluate(()=>{const e=viewer.entities.values.find(e=>e.name==='ISS · berechnete Position');return e.position.getValue(viewer.clock.currentTime);});
+  await page.waitForFunction(old=>{const e=viewer.entities.values.find(e=>e.name==='ISS · berechnete Position');const p=e.position.getValue(viewer.clock.currentTime);return Math.abs(p.x-old.x)>100;},issBefore);
+  await page.evaluate(()=>setEarthRotation(false));
+  assert(await page.locator('#issStatus').isHidden());
+  assert(!(await page.evaluate(()=>viewer.entities.values.some(e=>e.name==='ISS · berechnete Position'))));
+  await page.evaluate(()=>{setEarthRotation(true);testMessage({type:'issOrbit',data:JSON.stringify([{NORAD_CAT_ID:25544,EPOCH:'2020-01-01T00:00:00',MEAN_MOTION:15.5,ECCENTRICITY:.0008,INCLINATION:51.64,RA_OF_ASC_NODE:59.25,ARG_OF_PERICENTER:16.45,MEAN_ANOMALY:347.6,EPHEMERIS_TYPE:0,CLASSIFICATION_TYPE:'U',ELEMENT_SET_NO:999,REV_AT_EPOCH:17344,BSTAR:.000059,MEAN_MOTION_DOT:.00003,MEAN_MOTION_DDOT:0}])});});
+  assert((await page.locator('#issStatus').innerText()).includes('veraltet'));
+  assert(!(await page.evaluate(()=>viewer.entities.values.some(e=>e.name==='ISS · berechnete Position'))));
+  await page.evaluate(()=>setEarthRotation(false));
+  console.log('PASS ISS moves, hides on EARTH OFF and rejects stale orbital data');
   for(const [width,height] of [[1280,720],[1200,740],[950,590],[1920,1080]]){
    await page.setViewportSize({width,height});
    await page.waitForFunction(()=>{const r=document.querySelector('#quickLinks').getBoundingClientRect();return [...document.querySelectorAll('#quickLinks button')].filter(b=>{const q=b.getBoundingClientRect();return q.top>=r.top-1&&q.bottom<=r.bottom+1}).length===8;});
+   if(width===1280){
+    const layout=await page.evaluate(()=>{const b=s=>document.querySelector(s).getBoundingClientRect();return {map:b('.map-wrap').height,weatherRight:b('.weather-compact').right,sunLeft:b('.celestial-panel').left,scaleRight:b('.map-scale').right,controlsLeft:b('.map-controls').left};});
+    assert(layout.map>230,'Map is taller than old 184px at 720p');assert(layout.sunLeft>=layout.weatherRight,'Sun/moon beside weather');assert(layout.scaleRight<layout.controlsLeft,'Altitude clear of controls');
+   }
    if(width===1280)await page.screenshot({path:path.join(shot,'dashboard-1280.png')});
    assert.equal(await visible(),8);
    assert(await page.locator('#quickLinks').evaluate(el=>el.clientHeight>0));

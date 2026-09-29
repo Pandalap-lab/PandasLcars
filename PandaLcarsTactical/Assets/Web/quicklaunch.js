@@ -25,14 +25,20 @@
   for (const link of links) {
    const button = document.createElement("button");
    const badge = document.createElement("span"); badge.className = "link-badge";
-   badge.textContent = link.name.slice(0,2).toLocaleUpperCase("de-AT");
+   badge.textContent = "◎";
    const icon = document.createElement("img"); icon.className = "site-icon"; icon.alt = ""; icon.referrerPolicy = "no-referrer";
+   let candidates=[],candidate=0;
    try {
     const url = new URL(link.url), host = url.hostname.replace(/^www\./, "");
     const known = {"argosatlas.com":"https://argosatlas.com/favicon.svg", "oe24.at":"https://www.oe24.at/images/favicon-96x96.png", "derstandard.at":"https://b.staticfiles.at/s/icons/nachrichten/apple-touch-icon-57x57.png"};
-    if (url.protocol === "https:") icon.src = known[host] ?? url.origin + "/favicon.ico";
+    if (["https:","http:"].includes(url.protocol)) {
+     const origin="https://"+url.host;
+     candidates=[known[host],origin+"/favicon.ico",origin+"/favicon.svg",origin+"/apple-touch-icon.png"].filter(Boolean);
+     candidates=[...new Set(candidates)].map(x=>x+(x.includes("?")?"&":"?")+"panda="+Array.from(link.url).reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261).toString(16));
+    }
    } catch {}
-   icon.onload = () => { badge.hidden = true; }; icon.onerror = () => { icon.hidden = true; badge.hidden = false; };
+   icon.onload = () => { icon.hidden=false;badge.hidden = true; }; icon.onerror = () => { if(candidate<candidates.length)icon.src=candidates[candidate++];else {icon.hidden = true; badge.hidden = false;} };
+   if(candidates.length)icon.src=candidates[candidate++];
    const label = document.createElement("span"); label.textContent = link.name;
    button.append(icon, badge, label); button.title = link.name + " · " + link.url;
    button.setAttribute("aria-label", link.name + " in Tactical öffnen");

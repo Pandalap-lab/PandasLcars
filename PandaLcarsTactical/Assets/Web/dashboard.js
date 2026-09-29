@@ -174,7 +174,7 @@ function renderCelestial(){
  const status=document.createElement("div");status.className="celestial-status";
  const stamp=report.current?.validAt?new Date(report.current.validAt).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit",timeZone:report.timezone}):"—";
  const at=document.createElement("span"),refresh=document.createElement("span");
- at.textContent="◷ Stand "+stamp;refresh.textContent="↻ Aktualisierung alle 10 Min.";status.append(at,refresh);host.append(status);
+ at.textContent="◷ Stand "+stamp;refresh.textContent="↻ alle 10 Min.";status.append(at,refresh);host.append(status);
 }
 function weatherSymbol(code){
  if(code===0)return ["☀","Klar"];if(code<=3)return ["☁",code===1?"Überwiegend klar":"Bewölkt"];
@@ -276,7 +276,7 @@ function setEarthMode(enabled){
 }
 function syncEarthButton(){
  const running=earthMotion.earth&&earthMotion.enabled;
- pressed("earth",running);
+ pressed("earth",running);window.dispatchEvent(new Event("panda-earth-change"));
  $("earth").textContent="◉ EARTH "+(running?"ON":"OFF");
  $("earth").title=running?"Drehung ausschalten":"Erdansicht und Drehung einschalten";
 }
@@ -346,7 +346,17 @@ $("track").onclick=()=>{
 };
 $("sensors").onclick=()=>{const on=$("sensors").getAttribute("aria-pressed")!=="true";pressed("sensors",on);$("mapHud").hidden=!on;eventFeed("Ortsinformationen "+(on?"eingeblendet":"ausgeblendet"));};
 // Weather controls remain available; LAYERS takes keyboard focus to the selection.
-$("layers").onclick=()=>{$("layerTray").hidden=false;$("clouds").focus();};
+$("layers").onclick=()=>{
+ const host=$("layerOptions");host.replaceChildren();
+ for(const id of ["weatherOn","weatherOff","radar","clouds","rain","heat","lightningOpen"]){
+  const source=$(id),button=document.createElement("button");button.textContent=source.textContent;
+  button.setAttribute("aria-pressed",source.getAttribute("aria-pressed")??"false");
+  button.onclick=()=>{source.click();button.setAttribute("aria-pressed",source.getAttribute("aria-pressed")??"false");for(const other of host.children){const original=$(other.dataset.source);other.setAttribute("aria-pressed",original.getAttribute("aria-pressed")??"false");}};
+  button.dataset.source=id;host.append(button);
+ }
+ $("layerDialog").showModal();
+};
+$("closeLayers").onclick=()=>$("layerDialog").close();
 $("weatherOn").onclick=()=>setWeather(true);$("weatherOff").onclick=()=>setWeather(false);
 $("lightningOpen").onclick=()=>send("lightning",{place});
 for(const key of Object.keys(selections))$(key).onclick=()=>{selections[key]=!selections[key];pressed(key,selections[key]);renderGlobeWeather();};

@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://tile.openstreetmap.org https://tilecache.rainviewer.com; worker-src 'self' blob:; object-src 'none'; frame-src 'none'">
 <title>PandasLcars</title><link rel="stylesheet" href="Cesium/Widgets/widgets.css"><link rel="stylesheet" href="dashboard.css">
-<script src="Cesium/Cesium.js" defer></script><script src="zoom.js" defer></script><script src="earth-motion.js" defer></script><script src="dashboard.js" defer></script><script src="quicklaunch.js" defer></script><script src="settings.js" defer></script></head>
+<script src="Cesium/Cesium.js" defer></script><script src="zoom.js" defer></script><script src="earth-motion.js" defer></script><script src="dashboard.js" defer></script><script src="satellite.min.js" defer></script><script src="iss.js" defer></script><script src="quicklaunch.js" defer></script><script src="settings.js" defer></script></head>
 <body>
 <div id="updateNotice" role="status" hidden></div>
 <div class="dashboard">
@@ -20,10 +20,10 @@
    <button id="sensors" aria-pressed="true" title="Koordinaten und Ortsinformationen anzeigen">◇ &nbsp; SENSORS</button><button id="layers" title="Zur Wetter-Layer-Auswahl">▱ &nbsp; LAYERS</button>
    <button id="earth" title="Gesamte Weltkugel anzeigen">◉ &nbsp; EARTH</button>
   </div>
-  <div class="map-scale" id="mapScale">3D-GLOBUS</div>
+  <div id="issStatus" hidden role="status"></div><div class="map-scale" id="mapScale">3D-GLOBUS</div>
  </div>
  <section class="weather-dock" aria-label="Wettersteuerung">
-  <div class="weather-top"><h2>WETTER <span id="weatherPlace">WIEN</span></h2>
+  <div class="weather-compact"><div class="weather-top"><h2>WETTER <span id="weatherPlace">WIEN</span></h2>
    <div class="switch-group" role="group" aria-label="Wetter-Layer"><span>LAYER</span><button id="weatherOn" aria-pressed="false">ON</button><button id="weatherOff" aria-pressed="true">OFF</button></div>
    <button id="refresh" title="Wetter und Vorhersage aktualisieren">↻</button><button id="settings" title="Wetter-API konfigurieren">⚙</button>
   </div>
@@ -31,9 +31,10 @@
   </div><div class="weather-layers" id="layerTray"><button id="radar" aria-pressed="false" title="Regenradar von RainViewer ein-/ausblenden">RADAR</button><button id="clouds" aria-pressed="false">WOLKEN</button><button id="rain" aria-pressed="false">NIEDERSCHLAG</button><button id="heat" aria-pressed="true">TEMPERATUR</button>
     <div class="switch-group lightning-switch"><button id="lightningOpen" title="Kleines Firefox-Fenster auf dem LCARS-Bildschirm">BLITZKARTE ↗</button></div>
    </div>
-  <div id="celestialTimes" class="celestial-times" aria-live="polite">Sonne / Mond · Zeiten werden geladen …</div><div id="radarStatus" class="radar-status" hidden></div><div class="weather-status"><span id="weatherStatus" role="status">Wetterdaten werden geladen …</span><small><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo · CC BY 4.0</a></small></div>
+  </div><section class="celestial-panel"><h2>SONNE / MOND</h2><div id="celestialTimes" class="celestial-times" aria-live="polite">Sonne / Mond · Zeiten werden geladen …</div></section><div id="radarStatus" class="radar-status" hidden></div><div class="weather-status"><span id="weatherStatus" role="status">Wetterdaten werden geladen …</span><small><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo · CC BY 4.0</a></small></div>
  </section>
 </main>
+<dialog id="layerDialog"><h2>WETTER-LAYER</h2><div id="layerOptions"></div><button id="closeLayers">BACK</button></dialog>
 <aside class="right">
  <section class="system panel" aria-label="Aktueller Windows-Systemstatus"><h2>SYSTEM STATUS</h2><div class="system-rows">
 <div class="system-row"><span>CPU</span><progress id="cpuBar" max="100" value="0" aria-label="CPU-Auslastung"></progress><output id="cpuValue">—</output></div>
@@ -61,7 +62,7 @@
  <section class="panel targets"><h2>TARGETS / DESTINATIONS</h2><form id="searchForm"><input id="search" type="search" placeholder="Ort suchen …" aria-label="Ort suchen" minlength="2" maxlength="100"><button type="submit" title="Ort suchen">⌕</button></form><small id="searchStatus" role="status">Ziel wählen · Entfernung ab Wien</small><div id="destinations"></div></section>
  </div><section class="quick panel" aria-label="Quicklaunch"><h2>QUICK LAUNCH <button id="manageLinks" title="Eigene Links bearbeiten oder löschen" aria-label="Eigene Links verwalten">⚙</button></h2><div id="quickLinks" aria-label="Webseiten, maximal acht gleichzeitig sichtbar" tabindex="0"></div><button id="addLink">+ WEITERE</button></section>
 </div>
-<footer><span>PandasLcars v0.6.3 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Dienste im Browser öffnen">DIENSTE · IM BROWSER ÖFFNEN</button></footer>
+<footer><span>PandasLcars v0.6.4 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Dienste im Browser öffnen">DIENSTE · IM BROWSER ÖFFNEN</button></footer>
 </div>
 <dialog id="linkDialog" aria-labelledby="linkDialogTitle"><form id="linkForm">
  <h2 id="linkDialogTitle">QUICK LAUNCH · LINK HINZUFÜGEN</h2>

@@ -74,6 +74,17 @@ try
  sampleDisplays.RemoveAt(2);
  Check(displays.Preferred(sampleDisplays) is null,"Disconnected preferred display triggers fallback, not wrong monitor");
  if(OperatingSystem.IsWindows()) Console.WriteLine("Connected displays: "+string.Join(", ",PandaLcarsTactical.Settings.DisplaySettings.Monitors().Select(m=>$"{m.Name}: {m.Width}x{m.Height} at {m.X},{m.Y}")));
+ var orbitFile = Path.Combine(testFolder,"iss.json");
+ var orbitHandler = new OrbitFixtureHandler();
+ using var orbitHttp = new HttpClient(orbitHandler);
+ var orbit = new PandaLcarsTactical.IssOrbitService(orbitHttp,orbitFile);
+ await Task.WhenAll(orbit.GetAsync(),orbit.GetAsync());
+ Check(orbitHandler.Calls==1,"ISS concurrent requests share the cached data");
+ await new PandaLcarsTactical.IssOrbitService(orbitHttp,orbitFile).GetAsync();
+ Check(orbitHandler.Calls==1,"ISS cache survives app restart");
+ File.WriteAllText(orbitFile,"broken");
+ await new PandaLcarsTactical.IssOrbitService(orbitHttp,orbitFile).GetAsync();
+ Check(orbitHandler.Calls==2,"Damaged ISS cache is replaced from fixed endpoint");
  var serviceFile = Path.Combine(testFolder, "services.json");
  var services = new PandaLcarsTactical.Settings.PersonalServices(serviceFile);
  Check(!services.IsEnabled("calendar"), "Fresh install has no personal account");
@@ -131,4 +142,12 @@ finally { Directory.Delete(testFolder,true); }
 Console.WriteLine("All weather, radar, system, quicklaunch and activity tests passed.");
 sealed class FixtureHandler(string data):HttpMessageHandler {
  protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){token.ThrowIfCancellationRequested();return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(data)});}
+}
+
+sealed class OrbitFixtureHandler:HttpMessageHandler {
+ public int Calls;
+ protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){
+  if(request.RequestUri?.AbsoluteUri!="https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=JSON")throw new Exception("Unexpected orbit endpoint");
+  Interlocked.Increment(ref Calls);return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent("[{\"NORAD_CAT_ID\":25544}]")});
+ }
 }
