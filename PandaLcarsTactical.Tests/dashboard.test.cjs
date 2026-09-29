@@ -197,6 +197,7 @@ const server=http.createServer((req,res)=>{
     return Math.abs(box('.targets').right-box('.tactical').right)<1&&Math.abs(box('.quick').left-box('.forecast').left)<1&&Math.abs(box('.quick').right-box('.forecast').right)<1;
    });assert(aligned,'Shared panel edges');
    assert(await page.evaluate(()=>{const cells=[...document.querySelectorAll('.celestial-events b')];const x=e=>{return e.querySelector(".time-colon").getBoundingClientRect().x;};return Math.abs(x(cells[0])-x(cells[2]))<1&&Math.abs(x(cells[1])-x(cells[3]))<1;}),'Sun/moon colons vertically aligned');
+   assert(await page.evaluate(()=>{const a=[...document.querySelectorAll('.event-arrow')].map(e=>e.getBoundingClientRect().x);return Math.abs(a[0]-a[2])<1&&Math.abs(a[1]-a[3])<1;}),'Sun/moon arrows vertically aligned');
    assert(await page.evaluate(()=>[...document.querySelectorAll('.celestial-events>span')].every(e=>{const b=e.querySelector('b').getBoundingClientRect(),r=e.getBoundingClientRect(),s=e.querySelector('span').getBoundingClientRect();return b.right+6<r.right&&b.left-s.right<6;})),'Times beside label and clear of border');
    assert(await page.evaluate(()=>Math.abs(document.querySelector('.quick h2').getBoundingClientRect().height-document.querySelector('.targets h2').getBoundingClientRect().height)<1),'Quicklaunch and Targets header equal height');
   }

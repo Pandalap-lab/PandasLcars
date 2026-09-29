@@ -12,7 +12,7 @@ Auftrag und Sammelfreigabe: sämtliche untenstehenden Änderungen, lokale Tests,
 - [x] Radar-Detailstatus in erreichbarem STATUS/QUELLEN-Dialog. Aktivierung/Statuswechsel dürfen die Kartenhöhe nicht ändern. Open-Meteo-Quelle bleibt sichtbar; RainViewer-Details und Link sind über den Dialog erreichbar.
 - [x] Gewonnene Höhe an Karte; übrige Panelgrößen und LCARS-Design erhalten.
 
-- [x] Feste Zeitspalten: Doppelpunkte der Sonnen-/Mondzeiten exakt untereinander. Schrift wieder PandaCondensed wie 0.6.4; Zeiten unmittelbar neben Bezeichnung mit mindestens 6 Pixel Abstand zur Zellentrennlinie, automatisch geprüft. Wochentag rechts ausgeschrieben, sowohl in Sonne/Mond als auch am Dashboard-Datum. Automatischer Spaltenvergleich in allen geprüften Auflösungen.
+- [x] Feste Zeitspalten: Pfeile sowie Doppelpunkte der Sonnen-/Mondzeiten exakt untereinander, beide automatisch geprüft. Schrift wieder PandaCondensed wie 0.6.4; Zeiten unmittelbar neben Bezeichnung mit mindestens 6 Pixel Abstand zur Zellentrennlinie, automatisch geprüft. Wochentag rechts ausgeschrieben, sowohl in Sonne/Mond als auch am Dashboard-Datum. Automatischer Spaltenvergleich in allen geprüften Auflösungen.
 
 ## B. Karten-Grafiken
 - [x] Schwarze Rechtecke bei Target und ISS vermeiden: transparente PNG-Assets aus vorhandenen SVG-Vorlagen; positionsgebundene HTML-Bilder statt WebGL-Billboard-Texturen.

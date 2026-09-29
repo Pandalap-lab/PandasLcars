@@ -3,7 +3,7 @@
 Dieses Update korrigiert die in 0.6.4 gemeldeten Darstellungsfehler und gleicht Wetter und Sonne/Mond an die freigegebene kompakte Anordnung an.
 
 - Wetter: großes Symbol und Temperatur links, zwei Datenzeilen, alle Layer-Tasten gemeinsam darunter. Die Einheit °C hat Abstand zur Trennlinie, auch bei negativen und dreistelligen Werten. Radar-Details sind über STATUS / QUELLEN erreichbar und verändern die Kartenhöhe nicht.
-- Sonne/Mond: rechts neben Wetter, feste Zeitspalten mit senkrecht ausgerichteten Doppelpunkten. Vollständiger Wochentag rechts in der Überschrift; auch das Datum rechts oben im Dashboard verwendet den ausgeschriebenen Wochentag.
+- Sonne/Mond: rechts neben Wetter, feste Zeitspalten mit senkrecht ausgerichteten Pfeilen und Doppelpunkten. Vollständiger Wochentag rechts in der Überschrift; auch das Datum rechts oben im Dashboard verwendet den ausgeschriebenen Wochentag.
 - Target und ISS: transparente PNG-Symbole werden als positionsgebundene HTML-Bilder über der Karte dargestellt. Der fehlerhafte WebGL-Bildpfad entfällt. Wien hat ein transparentes Ortslabel mit Verbindungslinie.
 - ISS ANZEIGEN richtet die Kamera auf die berechnete Stationsposition. Ist die ISS auf der anderen Erdseite, erklärt der Status dies. Solarpaneele, Bahn und Sichtbarkeit wurden im lokalen Windows-Build geprüft. Die Position ist aus Bahndaten berechnet, keine direkte Live-Telemetrie. Darstellung nur bei EARTH ON.
 - Quicklaunch: tatsächliche Icon-Verweise der Website auslesen, relative Adressen auflösen, Bildinhalt prüfen und lokal zwischenspeichern. Nach einer URL-Änderung wird das neue Icon geladen. Das rote kurier.at-Icon wurde mit der echten Website und nach Cache-Neustart geprüft. Vorhandene Standard-Icons bleiben erhalten.

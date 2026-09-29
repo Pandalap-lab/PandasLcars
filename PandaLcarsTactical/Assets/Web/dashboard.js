@@ -167,7 +167,8 @@ function renderCelestial(){
  const row=document.createElement("div");row.className="celestial-events";
  for(const [key,name,icon] of [["sunrise","Sonne ↑","☀"],["sunset","Sonne ↓","☀"],["moonrise","Mond ↑","☾"],["moonset","Mond ↓","☾"]]){
   const item=document.createElement("span"),caption=document.createElement("span"),time=document.createElement("b");
-  caption.textContent=icon+" "+name;
+  caption.className="celestial-caption";
+  for(const [cls,value] of [["event-icon",icon],["event-name",name.slice(0,-2)],["event-arrow",name.slice(-1)]]){const part=document.createElement("span");part.className=cls;part.textContent=value;caption.append(part);}
   time.textContent=c[key]?new Date(c[key]).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit",timeZone:report.timezone}):"—";
   if(c[key]){const parts=time.textContent.split(":");time.replaceChildren();for(const [cls,value] of [["time-hours",parts[0]],["time-colon",":"],["time-minutes",parts[1]]]){const part=document.createElement("span");part.className=cls;part.textContent=value;time.append(part);}}
   item.append(caption,time);row.append(item);
