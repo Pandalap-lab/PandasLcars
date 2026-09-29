@@ -78,3 +78,7 @@ Wettertabellen, NETZ-Diagramm und ARGOS ATLAS: [Änderungen und Prüfgrenzen](do
 ## Update 0.6.4
 
 Größere Tactical-Karte, kompakte Wetter-/Astronomieansicht nebeneinander, LAYERS-Auswahl, ISS-Symbol mit berechneter Bahn nur bei EARTH ON, aktualisierte Quicklaunch-Icons und verbesserte Installer-Warte-/Fehleranzeige. Details und Prüfgrenzen: [Release 0.6.4](docs/release-0.6.4.md).
+
+## Update 0.6.5
+
+Kompakte Wetteransicht, ausgerichtete Sonne-/Mondzeiten, ausgeschriebener Wochentag, transparente Target-/ISS-Symbole, ISS ANZEIGEN, Website-Icons und gleich hohe Quicklaunch-/Targets-Balken. [Änderungen und Prüfungen](docs/release-0.6.5.md).

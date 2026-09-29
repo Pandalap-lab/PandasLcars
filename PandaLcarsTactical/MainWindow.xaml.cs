@@ -36,6 +36,7 @@ public sealed partial class MainWindow : Window
     private bool initialPresentationApplied;
     private Updates.UpdateRelease? availableUpdate;
     private bool updateBusy;
+    private readonly SiteIconService siteIcons = new();
     private IssOrbitService? issOrbit;
     public MainWindow()
     {
@@ -162,6 +163,10 @@ public sealed partial class MainWindow : Window
                     services.SetEnabled(message.GetProperty("serviceId").GetString() ?? "", false);
                     SendServices(); break;
                 case "links": SendLinks(id); break;
+                case "siteIcon":
+                    var iconLink = links.Links.FirstOrDefault(x => x.Id == message.GetProperty("linkId").GetString());
+                    if(iconLink is not null) { var iconData = await siteIcons.GetAsync(iconLink.Url); Send(new { type="siteIcon", linkId=iconLink.Id, url=iconLink.Url, data=iconData }); }
+                    break;
                 case "linkSave":
                     try
                     {
@@ -330,8 +335,8 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.4"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.4" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.5"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.5" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
         catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
         finally { updateBusy = false; }

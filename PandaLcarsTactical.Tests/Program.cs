@@ -74,6 +74,11 @@ try
  sampleDisplays.RemoveAt(2);
  Check(displays.Preferred(sampleDisplays) is null,"Disconnected preferred display triggers fallback, not wrong monitor");
  if(OperatingSystem.IsWindows()) Console.WriteLine("Connected displays: "+string.Join(", ",PandaLcarsTactical.Settings.DisplaySettings.Monitors().Select(m=>$"{m.Name}: {m.Width}x{m.Height} at {m.X},{m.Y}")));
+ var iconPage=new Uri("https://kurier.at/news/");
+ var candidates=PandaLcarsTactical.QuickLaunch.SiteIconService.Candidates("<link href='/assets/main/img/favicon-32x32.test.png' rel='icon'><link rel=apple-touch-icon href=../touch.png>",iconPage);
+ Check(candidates[0].AbsoluteUri=="https://kurier.at/assets/main/img/favicon-32x32.test.png"&&candidates[1].AbsoluteUri=="https://kurier.at/touch.png","Actual HTML icon references and relative URLs resolved");
+ Check(PandaLcarsTactical.QuickLaunch.SiteIconService.ImageData(System.Text.Encoding.UTF8.GetBytes("<html>error</html>")) is null,"HTML errors rejected as images");
+ Check(!PandaLcarsTactical.QuickLaunch.SiteIconService.PublicAddress(System.Net.IPAddress.Parse("127.0.0.1"))&&!PandaLcarsTactical.QuickLaunch.SiteIconService.PublicAddress(System.Net.IPAddress.Parse("192.168.1.1")),"Icon requests reject local addresses");
  var orbitFile = Path.Combine(testFolder,"iss.json");
  var orbitHandler = new OrbitFixtureHandler();
  using var orbitHttp = new HttpClient(orbitHandler);

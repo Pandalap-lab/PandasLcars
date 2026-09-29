@@ -1,6 +1,6 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
-const assets=path.resolve(__dirname,'../PandaLcarsTactical/Assets');
+const assets=process.env.PANDA_ASSETS_ROOT?path.resolve(process.env.PANDA_ASSETS_ROOT):path.resolve(__dirname,'../PandaLcarsTactical/Assets');
 const server=http.createServer((req,res)=>{
  const file=path.resolve(assets,'.'+decodeURIComponent(req.url.split('?')[0]));
  if(!file.startsWith(assets+path.sep)){res.writeHead(403).end();return;}
@@ -24,6 +24,7 @@ const server=http.createServer((req,res)=>{
     window.testSent.push(msg);
     if(msg.type==='displaySettings')setTimeout(()=>window.testMessage({type:'displaySettings',monitors:[{id:'monitor-test',name:'Monitor 3',width:1920,height:1080,primary:false}],monitorId:'monitor-test',fullscreen:true,autostart:true}),10);
     if(msg.type==='services')setTimeout(()=>window.testMessage({type:'services',data:[{id:'photos',name:'Google Fotos',enabled:false,status:'NICHT EINGERICHTET'}]}),10);
+    if(msg.type==='siteIcon'){const link=window.testLinks.find(x=>x.id===msg.linkId);if(link)setTimeout(()=>window.testMessage({type:'siteIcon',linkId:link.id,url:link.url,data:'data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="'+(link.url.includes('changed')?'red':'blue')+'"/></svg>')}),10);}
     if(msg.type==='links')setTimeout(()=>window.testMessage({type:'links',data:window.testLinks}),10);
     if(msg.type==='linkSave'){
      const link={id:msg.linkId??'new',name:msg.name,url:msg.url,custom:true};
@@ -63,12 +64,14 @@ const server=http.createServer((req,res)=>{
   assert((await page.locator('#celestialTimes').innerText()).replace(/\s+/g,' ').includes('Sonne ↑ 06:10'));
   assert((await page.locator('#celestialTimes').innerText()).replace(/\s+/g,' ').includes('Mond ↑ —'));
   assert((await page.locator('#celestialTimes').innerText()).includes('27.09.2026'));
-  console.log('PASS celestial local time, date and absent event');
+  assert.equal(await page.locator('#celestialWeekday').innerText(),'Sonntag');
+  console.log('PASS celestial local time, date, full weekday and absent event');
   await page.evaluate(()=>{
    report={timezone:'Europe/Vienna',current:{validAt:'2026-09-29T15:30:00Z',temperatureC:23,cloudPercent:0,precipitationMm:0,intervalMinutes:15,windKmh:15.3,humidityPercent:31,pressureHpa:1025.3,source:'Open-Meteo'},daily:[{date:'2026-09-29',minimumC:13,maximumC:23,weatherCode:1}],celestial:{date:'2026-09-29',sunrise:'2026-09-29T04:50:00Z',sunset:'2026-09-29T16:38:00Z',moonrise:'2026-09-29T15:24:00Z',moonset:'2026-09-29T08:20:00Z'}};
    renderWeather();renderForecast();
    for(let i=0;i<65;i++)renderNetwork(100+(i%7)*5,.5+(i%3)*.2);
   });
+  assert.equal(await page.locator('#celestialWeekday').innerText(),'Dienstag');
   assert.equal(await page.locator('#temperature').innerText(),'23 °C');
   assert.equal(await page.locator('#humidityValue').innerText(),'31 %');
   assert.equal(await page.locator('#weatherDetails .weather-line').count(),2);
@@ -112,7 +115,7 @@ const server=http.createServer((req,res)=>{
   console.log('PASS monitor settings, menu routing, update states, NCC lettering and icon slots');
   await page.getByRole('button',{name:'ARGOS ATLAS in Tactical öffnen',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='linkOpen'&&x.linkId==='5')));
-  assert(new URL(await page.locator('#quickLinks img').nth(5).getAttribute('src')).hostname==='argosatlas.com');
+  assert((await page.locator('#quickLinks img').nth(5).getAttribute('src')).startsWith('data:image/'));assert(await page.locator('#quickLinks img').nth(5).evaluate(e=>e.naturalWidth>0));
   assert.equal(await visible(),8);console.log('PASS exactly eight visible quicklaunch tiles');
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=el.scrollHeight);
   assert(await page.locator('#quickLinks').evaluate(el=>el.scrollTop>0));assert.equal(await visible(),8);
@@ -121,7 +124,8 @@ const server=http.createServer((req,res)=>{
   await page.locator('#addLink').click();await page.locator('#linkName').fill('Neu');await page.locator('#linkUrl').fill('https://example.org/');await page.locator('#saveLink').click();
   await page.waitForFunction(()=>!document.querySelector('#linkDialog').open);assert.equal(await page.locator('#quickLinks button').count(),13);
   await page.locator('#manageLinks').click();await page.locator('.manage-row').last().getByText('BEARBEITEN',{exact:true}).click();await page.locator('#linkName').fill('Geändert');await page.locator('#linkUrl').fill('https://changed.example.net/');await page.locator('#saveLink').click();await page.waitForFunction(()=>!document.querySelector('#linkDialog').open);
-  assert(new URL(await page.locator('#quickLinks img').last().getAttribute('src')).hostname==='changed.example.net');
+  await page.waitForFunction(()=>document.querySelector('#quickLinks button:last-child').dataset.url==='https://changed.example.net/'&&document.querySelector('#quickLinks button:last-child img').src.startsWith('data:image/')&&atob(document.querySelector('#quickLinks button:last-child img').src.split(',')[1]).includes('red'));
+  assert(await page.locator('#quickLinks img').last().evaluate(e=>e.naturalWidth>0));
   await page.locator('#manageLinks').click();await page.locator('.manage-row').last().getByText('LÖSCHEN',{exact:true}).click();await page.locator('.manage-row').last().getByText('WIRKLICH LÖSCHEN?',{exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#quickLinks button').length===12);await page.locator('#closeManage').click();console.log('PASS add, edit, delete dialog wiring');
   for(const mode of ['WORK','STANDBY','WARP']){
    await page.evaluate(mode=>testMessage({type:'activity',data:{mode,since:new Date().toISOString(),idleSeconds:mode==='STANDBY'?180:0,load:22,warpRequested:mode==='WARP'}}),mode);
@@ -150,6 +154,10 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>{setEarthMode(true);setEarthRotation(true);testMessage({type:'issOrbit',data:JSON.stringify([{NORAD_CAT_ID:25544,EPOCH:new Date().toISOString().replace('Z',''),MEAN_MOTION:15.5,ECCENTRICITY:0.0008,INCLINATION:51.64,RA_OF_ASC_NODE:59.25,ARG_OF_PERICENTER:16.45,MEAN_ANOMALY:347.6,EPHEMERIS_TYPE:0,CLASSIFICATION_TYPE:'U',ELEMENT_SET_NO:999,REV_AT_EPOCH:17344,BSTAR:0.000059,MEAN_MOTION_DOT:0.00003,MEAN_MOTION_DDOT:0}])});});
   await page.waitForFunction(()=>viewer.entities.values.some(e=>e.name==='ISS · berechnete Position'));
   assert((await page.locator('#issStatus').innerText()).includes('berechnet'));
+  await page.locator('#issLocate').click();
+  await page.waitForFunction(()=>!document.querySelector('#issMarker').hidden);
+  await page.locator('#issMarker img').evaluate(e=>e.decode());
+  await page.screenshot({path:path.resolve(__dirname,'../qa/iss-visible.png')});
   const issBefore=await page.evaluate(()=>{const e=viewer.entities.values.find(e=>e.name==='ISS · berechnete Position');return e.position.getValue(viewer.clock.currentTime);});
   await page.waitForFunction(old=>{const e=viewer.entities.values.find(e=>e.name==='ISS · berechnete Position');const p=e.position.getValue(viewer.clock.currentTime);return Math.abs(p.x-old.x)>100;},issBefore);
   await page.evaluate(()=>setEarthRotation(false));
@@ -160,12 +168,21 @@ const server=http.createServer((req,res)=>{
   assert(!(await page.evaluate(()=>viewer.entities.values.some(e=>e.name==='ISS · berechnete Position'))));
   await page.evaluate(()=>setEarthRotation(false));
   console.log('PASS ISS moves, hides on EARTH OFF and rejects stale orbital data');
+  const graphic=await page.evaluate(async()=>{
+   const result=[];for(const id of ['targetIcon','issMarker']){const e=document.getElementById(id),img=e.tagName==='IMG'?e:e.querySelector('img');await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height).data;let colored=0,transparent=0;for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]===0)transparent++;if(pixels[i+3]>100&&pixels[i]+pixels[i+1]+pixels[i+2]>150)colored++;}result.push({id,colored,transparent,total:c.width*c.height,corner:pixels[3]});}return result;
+  });
+  for(const g of graphic){assert(g.colored>30,g.id+' visible shape');assert(g.transparent>g.total*.2,g.id+' transparent background');assert.equal(g.corner,0);}
+  assert(await page.locator('#cityLabel').evaluate(e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'&&getComputedStyle(e).borderTopWidth==='0px'));
+  console.log('PASS real raster pixels: transparent corners and colored symbols, transparent city label');
   for(const [width,height] of [[1280,720],[1200,740],[950,590],[1920,1080]]){
    await page.setViewportSize({width,height});
    await page.waitForFunction(()=>{const r=document.querySelector('#quickLinks').getBoundingClientRect();return [...document.querySelectorAll('#quickLinks button')].filter(b=>{const q=b.getBoundingClientRect();return q.top>=r.top-1&&q.bottom<=r.bottom+1}).length===8;});
    if(width===1280){
     const layout=await page.evaluate(()=>{const b=s=>document.querySelector(s).getBoundingClientRect();return {map:b('.map-wrap').height,weatherRight:b('.weather-compact').right,sunLeft:b('.celestial-panel').left,scaleRight:b('.map-scale').right,controlsLeft:b('.map-controls').left};});
-    assert(layout.map>230,'Map is taller than old 184px at 720p');assert(layout.sunLeft>=layout.weatherRight,'Sun/moon beside weather');assert(layout.scaleRight<layout.controlsLeft,'Altitude clear of controls');
+    assert(layout.map>230,'Map is taller than old 184px at 720p');
+    const controls=await page.evaluate(()=>[...document.querySelectorAll('#layerTray button')].map(e=>{const b=e.getBoundingClientRect();return {y:b.y,right:b.right};}));assert(Math.max(...controls.map(x=>x.y))-Math.min(...controls.map(x=>x.y))<2,'All weather controls one row');
+    const h=await page.locator('.map-wrap').evaluate(e=>e.getBoundingClientRect().height);await page.evaluate(()=>radarStatus('Radar test with a long status message',false));assert.equal(await page.locator('.map-wrap').evaluate(e=>e.getBoundingClientRect().height),h,'Radar status never shrinks map');for(const temp of ['18,8 °C','−28,8 °C','100,0 °C']){await page.locator('#temperature').evaluate((e,t)=>e.textContent=t,temp);assert(await page.evaluate(()=>document.querySelector('#temperature').getBoundingClientRect().right+4<document.querySelector('#weatherDetails').getBoundingClientRect().left),'Temperature unit clear of divider: '+temp);}await page.locator('#temperature').evaluate(e=>e.textContent='23 °C');
+    assert(layout.sunLeft>=layout.weatherRight,'Sun/moon beside weather');assert(layout.scaleRight<layout.controlsLeft,'Altitude clear of controls');
    }
    if(width===1280)await page.screenshot({path:path.join(shot,'dashboard-1280.png')});
    assert.equal(await visible(),8);
@@ -179,6 +196,9 @@ const server=http.createServer((req,res)=>{
     const box=s=>document.querySelector(s).getBoundingClientRect();
     return Math.abs(box('.targets').right-box('.tactical').right)<1&&Math.abs(box('.quick').left-box('.forecast').left)<1&&Math.abs(box('.quick').right-box('.forecast').right)<1;
    });assert(aligned,'Shared panel edges');
+   assert(await page.evaluate(()=>{const cells=[...document.querySelectorAll('.celestial-events b')];const x=e=>{return e.querySelector(".time-colon").getBoundingClientRect().x;};return Math.abs(x(cells[0])-x(cells[2]))<1&&Math.abs(x(cells[1])-x(cells[3]))<1;}),'Sun/moon colons vertically aligned');
+   assert(await page.evaluate(()=>[...document.querySelectorAll('.celestial-events>span')].every(e=>{const b=e.querySelector('b').getBoundingClientRect(),r=e.getBoundingClientRect(),s=e.querySelector('span').getBoundingClientRect();return b.right+6<r.right&&b.left-s.right<6;})),'Times beside label and clear of border');
+   assert(await page.evaluate(()=>Math.abs(document.querySelector('.quick h2').getBoundingClientRect().height-document.querySelector('.targets h2').getBoundingClientRect().height)<1),'Quicklaunch and Targets header equal height');
   }
   console.log('PASS eight-tile layout at 950x590, 1200x740, 1500x940 and 1920x1080');
   await page.screenshot({path:path.join(shot,'dashboard-1920.png')});
@@ -189,6 +209,7 @@ const server=http.createServer((req,res)=>{
   const touchBounds=await touchPage.locator('.quick').boundingBox(),footerBounds=await touchPage.locator('footer').boundingBox();
   assert(touchBounds.y+touchBounds.height<=footerBounds.y);console.log('PASS compact touch layout avoids footer overlap');
   await touch.close();
+  if(process.env.PANDA_ASSETS_ROOT)console.log('PASS second pass against published build assets: '+assets);
   assert.deepEqual(errors,[]);console.log('PASS no JavaScript runtime errors');
  } finally { await browser.close(); server.close(); }
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});

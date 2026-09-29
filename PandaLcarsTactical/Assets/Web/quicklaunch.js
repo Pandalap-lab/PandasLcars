@@ -27,18 +27,10 @@
    const badge = document.createElement("span"); badge.className = "link-badge";
    badge.textContent = "◎";
    const icon = document.createElement("img"); icon.className = "site-icon"; icon.alt = ""; icon.referrerPolicy = "no-referrer";
-   let candidates=[],candidate=0;
-   try {
-    const url = new URL(link.url), host = url.hostname.replace(/^www\./, "");
-    const known = {"argosatlas.com":"https://argosatlas.com/favicon.svg", "oe24.at":"https://www.oe24.at/images/favicon-96x96.png", "derstandard.at":"https://b.staticfiles.at/s/icons/nachrichten/apple-touch-icon-57x57.png"};
-    if (["https:","http:"].includes(url.protocol)) {
-     const origin="https://"+url.host;
-     candidates=[known[host],origin+"/favicon.ico",origin+"/favicon.svg",origin+"/apple-touch-icon.png"].filter(Boolean);
-     candidates=[...new Set(candidates)].map(x=>x+(x.includes("?")?"&":"?")+"panda="+Array.from(link.url).reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261).toString(16));
-    }
-   } catch {}
-   icon.onload = () => { icon.hidden=false;badge.hidden = true; }; icon.onerror = () => { if(candidate<candidates.length)icon.src=candidates[candidate++];else {icon.hidden = true; badge.hidden = false;} };
-   if(candidates.length)icon.src=candidates[candidate++];
+   icon.onload=()=>{icon.hidden=false;badge.hidden=true;};
+   icon.onerror=()=>{icon.hidden=true;badge.hidden=false;};
+   button.dataset.linkId=link.id;button.dataset.url=link.url;
+   send("siteIcon",{linkId:link.id});
    const label = document.createElement("span"); label.textContent = link.name;
    button.append(icon, badge, label); button.title = link.name + " · " + link.url;
    button.setAttribute("aria-label", link.name + " in Tactical öffnen");
@@ -75,6 +67,9 @@
  $("cancelLink").onclick = () => dialog.close();
  $("linkForm").onsubmit = e => { e.preventDefault(); $("linkError").textContent = ""; request("linkSave", {linkId:editId, name:$("linkName").value, url:$("linkUrl").value}); };
  window.chrome?.webview?.addEventListener("message", ({data:msg}) => {
+  if(msg.type==="siteIcon"){
+   for(const button of $("quickLinks").children)if(button.dataset.linkId===msg.linkId&&button.dataset.url===msg.url&&typeof msg.data==="string"&&msg.data.startsWith("data:image/"))button.querySelector("img").src=msg.data;
+  }
   if (msg.type === "links") {
    links = msg.data; render();
    if (pending && msg.id === pending) { pending = null; $("saveLink").disabled = false; dialog.close(); eventFeed("Quicklaunch gespeichert."); }

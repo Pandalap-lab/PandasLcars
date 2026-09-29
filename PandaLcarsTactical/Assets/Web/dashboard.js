@@ -32,7 +32,7 @@ function clock(){
  const now=new Date(),digits=now.toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
  if($("clock").children.length!==8){$("clock").replaceChildren(...Array.from({length:8},()=>document.createElement("span")));}
  [...$("clock").children].forEach((cell,i)=>cell.textContent=digits[i]);$("clock").setAttribute("aria-label",digits);
- $("date").textContent=now.toLocaleDateString("de-AT",{weekday:"short",day:"2-digit",month:"short",year:"numeric"}).toUpperCase();
+ $("date").textContent=now.toLocaleDateString("de-AT",{weekday:"long",day:"2-digit",month:"short",year:"numeric"}).toUpperCase();
 }
 function distance(p){
  const r=Math.PI/180,a=vienna.latitude*r,b=p.latitude*r;
@@ -158,6 +158,7 @@ function renderWeather(){
 function renderCelestial(){
  const host=$("celestialTimes");host.replaceChildren();
  const c=report?.celestial;
+ $("celestialWeekday").textContent=c?new Date(c.date+"T12:00:00Z").toLocaleDateString("de-AT",{weekday:"long",timeZone:"UTC"}):"";
  if(!c){host.textContent="Sonne / Mond · Zeiten nicht verfügbar";return;}
  const label=document.createElement("small");label.className="celestial-heading";
  label.textContent=place.name+" · "+c.date.slice(8)+"."+c.date.slice(5,7)+"."+c.date.slice(0,4)+" · Ortszeit ("+report.timezone+")";
@@ -168,6 +169,7 @@ function renderCelestial(){
   const item=document.createElement("span"),caption=document.createElement("span"),time=document.createElement("b");
   caption.textContent=icon+" "+name;
   time.textContent=c[key]?new Date(c[key]).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit",timeZone:report.timezone}):"—";
+  if(c[key]){const parts=time.textContent.split(":");time.replaceChildren();for(const [cls,value] of [["time-hours",parts[0]],["time-colon",":"],["time-minutes",parts[1]]]){const part=document.createElement("span");part.className=cls;part.textContent=value;time.append(part);}}
   item.append(caption,time);row.append(item);
  }
  host.append(row);
@@ -255,14 +257,16 @@ async function initializeGlobe(){
   });
   let tileErrorNoted=false;
   osm.imageryProvider.errorEvent.addEventListener(()=>{if(!tileErrorNoted){eventFeed("Detailkarten nicht erreichbar; Weltkarte bleibt verfügbar.",true);tileErrorNoted=true;}});
-  target=viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude),billboard:{image:"target-reticle.svg",width:40,height:40,disableDepthTestDistance:Number.POSITIVE_INFINITY},
+  target=viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude),
    viewFrom:new Cesium.Cartesian3(0,-150000,180000)});
+  const targetIcon=document.createElement("img");targetIcon.id="targetIcon";targetIcon.className="map-symbol";targetIcon.src="target-reticle.png";targetIcon.alt="Tactical-Ziel";targetIcon.width=40;targetIcon.height=40;document.querySelector(".map-wrap").append(targetIcon);
   const cityLabel=document.createElement("div");cityLabel.id="cityLabel";cityLabel.className="city-label";cityLabel.textContent=place.name;document.querySelector(".map-wrap").append(cityLabel);
   viewer.scene.postRender.addEventListener(()=>{
    const position=target.position.getValue(viewer.clock.currentTime);
    const pixel=Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene,position);
    const visible=pixel&&new Cesium.EllipsoidalOccluder(viewer.scene.globe.ellipsoid,viewer.camera.positionWC).isPointVisible(position);
-   cityLabel.hidden=!visible;
+   cityLabel.hidden=!visible;targetIcon.hidden=!visible;
+   if(visible){targetIcon.style.left=Math.round(pixel.x-20)+"px";targetIcon.style.top=Math.round(pixel.y-20)+"px";}
    if(visible){cityLabel.style.left=Math.round(pixel.x+43)+"px";cityLabel.style.top=Math.round(pixel.y-28)+"px";}
   });
   viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude,globalHeight())});
@@ -459,3 +463,6 @@ setInterval(()=>{
 },2000);
 
 document.addEventListener("keydown",event=>{if(event.key==="F11"){event.preventDefault();send("fullscreen");}else if(event.key==="Escape"&&!document.querySelector("dialog[open]")){event.preventDefault();send("escape");}});
+
+$("weatherInfo").onclick=()=>{$("weatherInfoText").textContent=$("weatherStatus").textContent;$("weatherInfoDialog").showModal();};
+$("closeWeatherInfo").onclick=()=>$("weatherInfoDialog").close();
