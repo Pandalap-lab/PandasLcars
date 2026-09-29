@@ -1,4 +1,18 @@
+# Stand 0.6.3
+
+Die Nutzerliste vom 29.09.2026 und der Norton-Wartehinweis sind implementiert. Details und verbleibende Geräteprüfungen: [Release 0.6.3](docs/release-0.6.3.md). Die folgenden Abschnitte enthalten den bisherigen Planungsverlauf.
+
 # Stand 0.6.2
+
+## Aktuelle Nutzerliste vom 29.09.2026
+Maßgebliche nächste Arbeitspakete und Statusabgleich: [12-Punkte-Updateplan](docs/update-plan-2026-09-29.md). ARGOS ATLAS ausschließlich im Quicklaunch und im Tactical-Browser. Der Norton-Wartehinweis bleibt zusätzlich vorgemerkt.
+
+## Nächstes Update: Wartephase beim Installerstart
+- Nutzerbeobachtung: Norton prüft den Installer zunächst; nach Abschluss funktioniert das Update.
+- Nach dem Start anzeigen: „Installer gestartet – die Sicherheitsprüfung kann einen Moment dauern. Bitte warten.“
+- Erneutes Starten desselben Updates während der Übergabe an das Setup verhindern; Update-Taste entsprechend sperren.
+- Ohne Nachweis keinen laufenden Norton-Scan behaupten. Bei Startfehlern verständliche Rückmeldung und erneuten Versuch ermöglichen.
+- Norton und andere Schutzfunktionen bleiben aktiv. Vorgemerkt, noch nicht implementiert.
 
 Die nachstehenden freigegebenen UI-, EARTH-, Astronomie- und Fensteränderungen sind implementiert. Aktueller Umfang und verbleibende Geräteprüfungen: [Release 0.6.2](docs/release-0.6.2.md). Die folgenden Abschnitte dokumentieren die ursprünglichen Anforderungen.
 

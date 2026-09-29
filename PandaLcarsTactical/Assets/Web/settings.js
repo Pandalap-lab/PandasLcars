@@ -17,8 +17,9 @@
  $("weatherSettings").onclick = () => { dialog.close(); send("settings"); };
  window.chrome?.webview?.addEventListener("message", ({data:m}) => {
   if (m.type === "update") {
-   $("updateStatus").textContent = m.message;
-   $("updateCheck").disabled = m.state === "checking" || m.state === "downloading";
+   $("updateStatus").textContent = m.state === "starting" ? "INSTALLER STARTET …" : m.message;
+   $("updateNotice").hidden=m.state!=="starting";$("updateNotice").textContent=m.message;
+   $("updateCheck").disabled = ["checking","downloading","starting"].includes(m.state);
    $("updateDownload").disabled = m.state !== "available";
    $("updateCheck").textContent = m.state === "available" ? "UPDATE VORHANDEN" : "UPDATES SUCHEN";
    eventFeed(m.message, m.state === "error"); return;

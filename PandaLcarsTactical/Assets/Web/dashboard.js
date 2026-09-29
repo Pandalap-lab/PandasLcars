@@ -70,6 +70,12 @@ function drawArtwork(){
     title.textContent=text;svg.append(title);
    }
   }
+  if(host.classList.contains("ship")){
+   const defs=document.createElementNS(svg.namespaceURI,"defs"),clip=document.createElementNS(svg.namespaceURI,"clipPath"),shape=document.createElementNS(svg.namespaceURI,"rect");
+   clip.id="shipInterior";
+   for(const [k,v] of Object.entries({x:518,y:744,width:403,height:198,rx:12}))shape.setAttribute(k,v);
+   clip.append(shape);defs.append(clip);svg.prepend(defs);image.setAttribute("clip-path","url(#shipInterior)");
+  }
   // Replace lettering in SVG coordinates, leaving the original artwork untouched.
   const labels = host.classList.contains("insignia") ? [[27,863,91,24,"NCC-080470",16]] : host.classList.contains("ship") ? [[522,768,101,22,"NCC-080470",17]] : [];
   for (const [x,y,w,h,text,size] of labels) {
@@ -140,28 +146,35 @@ function loadWeather(){
 }
 function renderWeather(){
  renderCelestial();
- if(!report){$("temperature").textContent="— °C";$("weatherDetails").textContent="Keine aktuellen Werte";renderGlobeWeather();return;}
- const w=report.current;$("temperature").textContent=f(w.temperatureC)+" °C";
- $("weatherDetails").textContent="Wolken "+f(w.cloudPercent)+" % · Regen "+f(w.precipitationMm)+" mm / "+f(w.intervalMinutes)+" Min.\nWind "+f(w.windKmh)+" km/h · Feuchte "+f(w.humidityPercent)+" %\nLuftdruck "+f(w.pressureHpa)+" hPa";
- const stamp=new Date(w.validAt).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit",timeZone:report.timezone});
- $("weatherStatus").textContent="Stand "+stamp+" Ortszeit · Aktualisierung alle 10 Min.";
+ const w=report?.current;
+ $("temperature").textContent=w?f(w.temperatureC)+" °C":"— °C";
+ $("currentWeatherIcon").textContent=w?(w.precipitationMm>0?"☂":w.cloudPercent<20?"☀":"☁"):"—";
+ $("currentWeatherIcon").setAttribute("aria-label",w?(w.precipitationMm>0?"Niederschlag":w.cloudPercent<20?"Klar":"Bewölkt"):"Keine Wetterdaten");
+ for(const [id,key,unit] of [["cloudValue","cloudPercent"," %"],["rainValue","precipitationMm"," mm"],["windValue","windKmh"," km/h"],["humidityValue","humidityPercent"," %"],["pressureValue","pressureHpa"," hPa"]]) $(id).textContent=w?f(w[key])+unit:"—";
+ $("rainInterval").textContent="Regen ("+(w?f(w.intervalMinutes):"15")+" Min.)";
+ $("weatherStatus").textContent=w?"Wetterdaten · "+w.source:"Keine aktuellen Wetterdaten";
  renderGlobeWeather();
 }
 function renderCelestial(){
  const host=$("celestialTimes");host.replaceChildren();
  const c=report?.celestial;
  if(!c){host.textContent="Sonne / Mond · Zeiten nicht verfügbar";return;}
- const label=document.createElement("small");
+ const label=document.createElement("small");label.className="celestial-heading";
  label.textContent=place.name+" · "+c.date.slice(8)+"."+c.date.slice(5,7)+"."+c.date.slice(0,4)+" · Ortszeit ("+report.timezone+")";
  host.append(label);
- host.title="Berechnete Zeiten für freien Horizont auf Meereshöhe. Gelände und Wetter können die Sichtbarkeit verändern. — bedeutet: kein Ereignis an diesem Datum.";
- for(const [key,name] of [["sunrise","Sonne ↑"],["sunset","Sonne ↓"],["moonrise","Mond ↑"],["moonset","Mond ↓"]]){
-  const item=document.createElement("span");
-  const time=c[key]?new Date(c[key]).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit",timeZone:report.timezone}):"—";
-  item.textContent=name+" "+time;
-  item.title=(name.endsWith("↑")?name.replace(" ↑","aufgang"):name.replace(" ↓","untergang"))+": "+(time==="—"?"kein Ereignis an diesem Datum":time+" Ortszeit");
-  host.append(item);
+ host.title="Berechnete Zeiten für freien Horizont auf Meereshöhe. — bedeutet kein Ereignis an diesem Datum.";
+ const row=document.createElement("div");row.className="celestial-events";
+ for(const [key,name,icon] of [["sunrise","Sonne ↑","☀"],["sunset","Sonne ↓","☀"],["moonrise","Mond ↑","☾"],["moonset","Mond ↓","☾"]]){
+  const item=document.createElement("span"),caption=document.createElement("span"),time=document.createElement("b");
+  caption.textContent=icon+" "+name;
+  time.textContent=c[key]?new Date(c[key]).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit",timeZone:report.timezone}):"—";
+  item.append(caption,time);row.append(item);
  }
+ host.append(row);
+ const status=document.createElement("div");status.className="celestial-status";
+ const stamp=report.current?.validAt?new Date(report.current.validAt).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit",timeZone:report.timezone}):"—";
+ const at=document.createElement("span"),refresh=document.createElement("span");
+ at.textContent="◷ Stand "+stamp;refresh.textContent="↻ Aktualisierung alle 10 Min.";status.append(at,refresh);host.append(status);
 }
 function weatherSymbol(code){
  if(code===0)return ["☀","Klar"];if(code<=3)return ["☁",code===1?"Überwiegend klar":"Bewölkt"];
@@ -250,7 +263,7 @@ async function initializeGlobe(){
    const pixel=Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene,position);
    const visible=pixel&&new Cesium.EllipsoidalOccluder(viewer.scene.globe.ellipsoid,viewer.camera.positionWC).isPointVisible(position);
    cityLabel.hidden=!visible;
-   if(visible){cityLabel.style.left=Math.round(pixel.x+24)+"px";cityLabel.style.top=Math.round(pixel.y-28)+"px";}
+   if(visible){cityLabel.style.left=Math.round(pixel.x+43)+"px";cityLabel.style.top=Math.round(pixel.y-28)+"px";}
   });
   viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude,globalHeight())});
   setEarthMode(true);startEarthMotion();renderGlobeWeather();eventFeed("3D-Globus bereit. CENTER zeigt Österreich / Wien.");
@@ -364,6 +377,17 @@ setInterval(()=>{if(report&&Date.now()-new Date(report.current.validAt).getTime(
 
 let pendingRadar=null,radarWanted=false,radarLayer=null,radarFrame=null,lastRadarRequest=0,lastSystem=Date.now();
 let nextRadarTileAt=0;
+const networkSamples=[];
+function renderNetwork(download,upload){
+ const valid=Number.isFinite(download)&&Number.isFinite(upload)&&download>=0&&upload>=0;
+ networkSamples.push(valid?[download,upload]:null);if(networkSamples.length>60)networkSamples.shift();
+ $("downloadValue").textContent=valid?f(download):"—";$("uploadValue").textContent=valid?f(upload):"—";
+ const max=Math.max(1,...networkSamples.filter(Boolean).flat());
+ for(const [id,index] of [["downloadLine",0],["uploadLine",1]]){
+  let d="",connected=false;networkSamples.forEach((sample,i)=>{if(!sample){connected=false;return;}d+=(connected?"L":"M")+(i*120/59).toFixed(1)+","+(30-sample[index]/max*28).toFixed(1);connected=true;});$(id).setAttribute("d",d);
+ }
+ $("networkChart").setAttribute("aria-label",valid?"Netzwerkverlauf, gemeinsame Skala bis "+f(max)+" Mbit/s":"Netzwerkmessung nicht verfügbar");
+}
 function renderSystem(s){
  lastSystem=Date.now();
  const percent=n=>Number.isFinite(n)?Math.round(n)+" %":"OFFLINE";
@@ -376,7 +400,7 @@ function renderSystem(s){
  $("diskValue").title=gib(s.diskUsedGb,s.diskTotalGb);$("diskBar").title=$("diskValue").title;
  $("diskName").textContent="DISK "+s.diskName;
  $("gpuValue").title="Stärkste GPU-Engine über alle Adapter; OFFLINE = Windows-Zähler nicht verfügbar";
- $("networkValue").textContent=Number.isFinite(s.downloadMbps)&&Number.isFinite(s.uploadMbps)?"↓ "+f(s.downloadMbps)+"  ↑ "+f(s.uploadMbps)+" Mbit/s":"Messung …";
+ renderNetwork(s.downloadMbps,s.uploadMbps);
  $("batteryValue").title=s.power;
  $("systemStatus").textContent=s.power+" · RAM "+gib(s.ramUsedGb,s.ramTotalGb);
  $("systemStatus").title="Windows · alle 2 Sekunden · "+s.power+" · Systemlaufwerk "+gib(s.diskUsedGb,s.diskTotalGb);
@@ -416,7 +440,7 @@ $("radar").onclick=()=>{radarWanted=!radarWanted;syncRadar();eventFeed("Regenrad
 send("system");
 setInterval(()=>{
  send("system");
- if(Date.now()-lastSystem>10000){for(const key of ["cpu","ram","disk","gpu","battery"]){$(key+"Value").textContent="OFFLINE";$(key+"Bar").value=0;}$("networkValue").textContent="OFFLINE";$("systemStatus").textContent="Systemmessung OFFLINE";}
+ if(Date.now()-lastSystem>10000){for(const key of ["cpu","ram","disk","gpu","battery"]){$(key+"Value").textContent="OFFLINE";$(key+"Bar").value=0;}renderNetwork(null,null);$("systemStatus").textContent="Systemmessung OFFLINE";}
  if(radarWanted&&weatherEnabled&&viewer){
   viewer.scene.requestRender();
   if(radarFrame&&Date.now()-new Date(radarFrame.generatedAt).getTime()>5400000){removeRadar();radarFrame=null;radarStatus("Radarbild veraltet",true);}

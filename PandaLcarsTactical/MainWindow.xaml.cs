@@ -325,8 +325,8 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.2"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.2" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.3"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.3" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
         catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
         finally { updateBusy = false; }
@@ -342,7 +342,13 @@ public sealed partial class MainWindow : Window
             var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "Update installieren", Content = "Download und SHA-256-Prüfung abgeschlossen. PandasLcars wird geschlossen und das Setup gestartet. Einstellungen bleiben erhalten. Der Installer ist nicht digital signiert; Windows oder Norton können ihn prüfen oder blockieren.", PrimaryButtonText = "Installieren", CloseButtonText = "Später", DefaultButton = ContentDialogButton.Close };
             if (await dialog.ShowAsync() == ContentDialogResult.Primary)
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installer) { UseShellExecute = true });
+                Send(new { type = "update", state = "starting", message = "Installer wird gestartet – die Sicherheitsprüfung kann einen Moment dauern. Bitte warten." });
+                await Task.Run(() =>
+                {
+                    using var setup = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installer) { UseShellExecute = true });
+                    if (setup is null) throw new IOException("Installer konnte nicht gestartet werden.");
+                });
+                await Task.Delay(3000);
                 Close();
             }
         }

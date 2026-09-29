@@ -70,3 +70,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## Aktuell: 0.6.2
 
 Änderungen, Bedienung und Prüfgrenzen: [Update 0.6.2](docs/release-0.6.2.md).
+
+## Aktuell: 0.6.3
+
+Wettertabellen, NETZ-Diagramm und ARGOS ATLAS: [Änderungen und Prüfgrenzen](docs/release-0.6.3.md). Update über die vorhandenen App-Tasten. Eigene Links und Bildschirmwahl bleiben erhalten.

@@ -29,7 +29,7 @@
    const icon = document.createElement("img"); icon.className = "site-icon"; icon.alt = ""; icon.referrerPolicy = "no-referrer";
    try {
     const url = new URL(link.url), host = url.hostname.replace(/^www\./, "");
-    const known = {"oe24.at":"https://www.oe24.at/images/favicon-96x96.png", "derstandard.at":"https://b.staticfiles.at/s/icons/nachrichten/apple-touch-icon-57x57.png"};
+    const known = {"argosatlas.com":"https://argosatlas.com/favicon.svg", "oe24.at":"https://www.oe24.at/images/favicon-96x96.png", "derstandard.at":"https://b.staticfiles.at/s/icons/nachrichten/apple-touch-icon-57x57.png"};
     if (url.protocol === "https:") icon.src = known[host] ?? url.origin + "/favicon.ico";
    } catch {}
    icon.onload = () => { badge.hidden = true; }; icon.onerror = () => { icon.hidden = true; badge.hidden = false; };

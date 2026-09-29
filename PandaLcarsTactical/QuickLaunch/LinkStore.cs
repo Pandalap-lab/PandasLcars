@@ -12,7 +12,8 @@ public sealed class LinkStore
         new("standard", "DER STANDARD", "https://www.derstandard.at/", false),
         new("heute", "Heute", "https://www.heute.at/", false),
         new("facebook", "Facebook", "https://www.facebook.com/", false),
-        new("oe24", "OE24", "https://www.oe24.at/", false)];
+        new("oe24", "OE24", "https://www.oe24.at/", false),
+        new("argos", "ARGOS ATLAS", "https://argosatlas.com/", false)];
     public IReadOnlyList<LaunchLink> Links { get; private set; } = Defaults.ToArray();
     public string? Warning { get; private set; }
     public LinkStore(string path)

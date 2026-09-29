@@ -10,10 +10,10 @@ for(const current of [500,1000,160000,10000000,35000000]) {
   assert(Math.abs(h-target)<Math.max(1,target*.0001));
  }
 }
-assert(z.target(100000,null,120,0)/100000<1.05);
+assert(z.target(100000,null,120,0)/100000<1.015);
 assert.equal(z.wheelDelta(3,1),48);
 assert.equal(z.wheelDelta(1,2),120);
 let pending=null;
 for(let i=0;i<500;i++)pending=z.target(100000,pending,120,0);
-assert(pending<=125000);
-console.log('PASS zoom limits, smooth monotonic convergence, event normalization, <=5% wheel steps and burst cap');
+assert(pending<=108000);
+console.log('PASS zoom limits, smooth monotonic convergence, event normalization, <=1.5% wheel steps and burst cap');

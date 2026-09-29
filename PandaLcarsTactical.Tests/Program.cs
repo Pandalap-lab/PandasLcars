@@ -91,15 +91,16 @@ try
  Check(corruptPreserved && File.ReadAllText(serviceFile) == "invalid", "Corrupt service settings preserved");
  var file = Path.Combine(testFolder, "links.json");
  var store = new PandaLcarsTactical.QuickLaunch.LinkStore(file);
- Check(store.Links.Count == 5, "Five requested standard links");
+ Check(store.Links.Count == 6, "Six requested standard links");
+ Check(store.Links.Single(x=>x.Id=="argos").Url=="https://argosatlas.com/", "ARGOS ATLAS default has the confirmed address");
  for (int i=0; i<7; i++) store.Save(null,"Test " + i,"example.com/" + i);
  var loaded = new PandaLcarsTactical.QuickLaunch.LinkStore(file);
- Check(loaded.Links.Count == 12 && loaded.Links.Count(x=>x.Custom)==7, "More than eight links persist across restart");
+ Check(loaded.Links.Count == 13 && loaded.Links.Count(x=>x.Custom)==7, "More than eight links persist across restart");
  var custom = loaded.Links.Last();
  loaded.Save(custom.Id, "Änderung", "https://example.org/changed");
  Check(new PandaLcarsTactical.QuickLaunch.LinkStore(file).Links.Last().Name == "Änderung", "Edited name and URL persist");
  loaded.Delete(custom.Id);
- Check(new PandaLcarsTactical.QuickLaunch.LinkStore(file).Links.Count == 11, "Deleted custom link stays deleted");
+ Check(new PandaLcarsTactical.QuickLaunch.LinkStore(file).Links.Count == 12, "Deleted custom link stays deleted");
  foreach(var bad in new[]{"javascript:alert(1)","file:///C:/Windows", "https://user:password@example.com/", "https://panda.local/Web/index.html", "data:text/html,test"})
  {
   bool rejected=false; try { loaded.Save(null,"Unsafe",bad); } catch(ArgumentException){rejected=true;}
@@ -109,7 +110,7 @@ try
  Check(standardProtected,"Standard links protected from custom delete");
  File.WriteAllText(file,"broken JSON");
  var broken = new PandaLcarsTactical.QuickLaunch.LinkStore(file);
- Check(broken.Warning is not null && broken.Links.Count == 5 && File.ReadAllText(file)=="broken JSON", "Corrupt file retained and surfaced");
+ Check(broken.Warning is not null && broken.Links.Count == 6 && File.ReadAllText(file)=="broken JSON", "Corrupt file retained and surfaced");
  var activity = new PandaLcarsTactical.SystemInfo.ActivityStatus();
  var at = DateTimeOffset.Now;
  Check(activity.Update(at,0,10,null).Mode == "WORK", "Input means WORK");

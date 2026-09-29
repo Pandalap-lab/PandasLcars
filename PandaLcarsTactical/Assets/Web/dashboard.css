@@ -69,3 +69,31 @@ dialog{color:#acd5ff;background:#02080f;border:2px solid #748eec;border-radius:1
 .location-body{height:calc(100% - 34px)}
 .location-body>.compass{max-height:100%;padding:3px;overflow:visible}
 @media(max-width:1250px){.bottom-primary{gap:6px}.location h2,.forecast h2,.feeds h2{font-size:13px}}
+
+/* 0.6.3: reference package M01–M07, existing panel dimensions retained. */
+.map-hud{background:transparent;border:0;border-radius:0;padding:8px 12px;text-shadow:0 1px 2px #000}
+.weather-body{display:grid;grid-template-columns:90px minmax(0,1fr);gap:8px;padding:4px 0}
+.weather-reading{display:flex;flex-direction:column;justify-content:center;gap:0;border-right:1px solid #247697}
+#currentWeatherIcon{font-size:24px;color:#ffb541;line-height:1}
+.weather-reading strong{font-size:25px}.weather-table{min-width:0;font-size:11px}
+.weather-line{display:flex;min-width:0}.weather-line+ .weather-line{border-top:1px solid #247697}
+.weather-line>span{flex:1;padding:2px 7px;min-width:0;white-space:nowrap}.weather-line>span+span{border-left:1px solid #247697}
+.weather-line b{display:block;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.weather-layers{max-width:none;justify-content:flex-end;flex-wrap:wrap;margin:0 0 3px}.lightning-switch{width:auto}
+.celestial-times{display:block;border:1px solid #247697;border-radius:7px;padding:2px 5px;font-size:10px;line-height:1.2}
+.celestial-heading{display:block;color:#ffbd61;font-size:10px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-bottom:2px}
+.celestial-events{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #247697;border-bottom:1px solid #247697}
+.celestial-events>span{padding:2px 5px}.celestial-events>span+span{border-left:1px solid #247697}.celestial-events b{display:block;font-size:12px;font-weight:600}
+.celestial-status{display:flex;gap:12px;padding-top:2px}.celestial-status>span+span{border-left:1px solid #247697;padding-left:12px}
+.weather-status{font-size:9px;min-height:10px;padding-top:2px}
+.network-row{align-items:end;min-height:28px}.network-row>span{align-self:end}.network-row output{grid-column:3;color:inherit;font-size:9px}
+#networkChart{width:100%;height:28px;border:1px solid #237292;background:#001019}
+#networkValue>span{display:grid;grid-template-columns:8px minmax(24px,1fr) 31px;gap:2px;line-height:1.4;align-items:baseline}
+#networkValue b{font-weight:500;overflow:hidden;text-overflow:ellipsis}#networkValue small{font-size:inherit;text-align:right;color:#9dccff}.download{color:#00e59b}.upload{color:#ef439b}
+.ship{border:1px solid #389fd2;border-radius:13px}.ship>svg{border-radius:12px}.city-label{overflow:visible;border-color:#37cbff;background:#031420c9;font-size:12px;max-width:160px}
+.city-label:before{content:"";position:absolute;width:31px;height:1px;right:100%;top:100%;background:#37cbff;transform:rotate(-31deg);transform-origin:right center}
+@media(max-height:740px){.weather-body{grid-template-columns:70px minmax(0,1fr);gap:4px}.weather-line>span{padding:1px 4px}.weather-table{font-size:10px}.weather-line b{font-size:11px}.weather-reading strong{font-size:21px}#currentWeatherIcon{font-size:19px}.celestial-events>span{padding:1px 4px}.celestial-events b{font-size:11px}.celestial-times{font-size:9px}.weather-layers>button{min-height:21px;padding:2px 4px}.tactical{grid-template-rows:46px minmax(60px,1fr) auto}.map-controls{max-height:calc(100% - 12px);overflow-y:auto}.network-row{min-height:22px}#networkChart{height:22px}}
+
+.metric-icon{width:15px;height:15px;vertical-align:middle;display:inline-block}
+#updateNotice{position:fixed;z-index:50;top:75px;left:20%;right:20%;padding:18px;background:#071929;border:2px solid #ffb541;border-radius:12px;color:#ffbd61;font-size:17px;text-align:center}
+@media(min-height:661px){.weather-table{font-size:11px}.weather-line b{font-size:13px}.celestial-times{font-size:10px}.celestial-events b{font-size:13px}.celestial-events>span{padding:2px 5px}}

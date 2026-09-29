@@ -17,7 +17,7 @@ const server=http.createServer((req,res)=>{
   await page.route('**/*',route=>route.request().url().startsWith('http://127.0.0.1:')?route.continue():route.abort());
   await page.addInitScript(()=>{
    const listeners=[];
-   window.testLinks=['Kronen Zeitung','DER STANDARD','Heute','Facebook','OE24',...Array.from({length:7},(_,i)=>'Eigener Link '+(i+1))].map((name,i)=>({id:String(i),name,url:'https://example.com/'+i,custom:i>=5}));
+   window.testLinks=['Kronen Zeitung','DER STANDARD','Heute','Facebook','OE24','ARGOS ATLAS',...Array.from({length:6},(_,i)=>'Eigener Link '+(i+1))].map((name,i)=>({id:String(i),name,url:i===5?'https://argosatlas.com/':'https://example.com/'+i,custom:i>=6}));
    window.testMessage=data=>listeners.forEach(fn=>fn({data}));
    window.testSent=[];
    window.chrome={webview:{addEventListener:(name,fn)=>listeners.push(fn),postMessage:msg=>{
@@ -60,10 +60,24 @@ const server=http.createServer((req,res)=>{
    report={timezone:'Asia/Kolkata',celestial:{date:'2026-09-27',sunrise:'2026-09-27T00:40:00Z',sunset:'2026-09-27T12:40:00Z',moonrise:null,moonset:'2026-09-27T01:00:00Z'}};
    renderCelestial();
   });
-  assert((await page.locator('#celestialTimes').innerText()).includes('Sonne ↑ 06:10'));
-  assert((await page.locator('#celestialTimes').innerText()).includes('Mond ↑ —'));
+  assert((await page.locator('#celestialTimes').innerText()).replace(/\s+/g,' ').includes('Sonne ↑ 06:10'));
+  assert((await page.locator('#celestialTimes').innerText()).replace(/\s+/g,' ').includes('Mond ↑ —'));
   assert((await page.locator('#celestialTimes').innerText()).includes('27.09.2026'));
   console.log('PASS celestial local time, date and absent event');
+  await page.evaluate(()=>{
+   report={timezone:'Europe/Vienna',current:{validAt:'2026-09-29T15:30:00Z',temperatureC:23,cloudPercent:0,precipitationMm:0,intervalMinutes:15,windKmh:15.3,humidityPercent:31,pressureHpa:1025.3,source:'Open-Meteo'},daily:[{date:'2026-09-29',minimumC:13,maximumC:23,weatherCode:1}],celestial:{date:'2026-09-29',sunrise:'2026-09-29T04:50:00Z',sunset:'2026-09-29T16:38:00Z',moonrise:'2026-09-29T15:24:00Z',moonset:'2026-09-29T08:20:00Z'}};
+   renderWeather();renderForecast();
+   for(let i=0;i<65;i++)renderNetwork(100+(i%7)*5,.5+(i%3)*.2);
+  });
+  assert.equal(await page.locator('#temperature').innerText(),'23 °C');
+  assert.equal(await page.locator('#humidityValue').innerText(),'31 %');
+  assert.equal(await page.locator('#weatherDetails .weather-line').count(),2);
+  assert((await page.locator('#celestialTimes').innerText()).includes('Stand 17:30'));
+  assert(await page.evaluate(()=>networkSamples.length===60&&document.querySelector('#downloadLine').getAttribute('d').includes('L')));
+  assert.equal(await page.locator('#mapHud').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+  await page.evaluate(()=>{renderNetwork(null,null);renderNetwork(4,1)});
+  assert(await page.locator('#downloadLine').evaluate(el=>el.getAttribute('d').split('M').length>=3));
+  console.log('PASS weather tables, transparent HUD and network history with measurement gap');
   assert(await page.evaluate(()=>viewer.scene.globe.enableLighting&&nightLayer.dayAlpha===0&&nightLayer.nightAlpha===1));
   await page.locator('#center').click();
   assert(await page.evaluate(()=>!earthMotion.earth&&!viewer.scene.globe.enableLighting&&!nightLayer.show));
@@ -89,15 +103,20 @@ const server=http.createServer((req,res)=>{
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='updateDownload')));
   await page.evaluate(()=>testMessage({type:'update',state:'downloading',message:'LÄDT'}));
   assert(await page.locator('#updateDownload').isDisabled());
+  await page.evaluate(()=>testMessage({type:'update',state:'starting',message:'Installer wird gestartet – bitte warten'}));
+  assert(await page.locator('#updateDownload').isDisabled());assert(await page.locator('#updateCheck').isDisabled());
   await page.evaluate(()=>testMessage({type:'update',state:'current',message:'AKTUELL'}));
   assert.equal(await page.locator('.insignia svg text').textContent(),'NCC-080470');
   assert.equal(await page.locator('.ship svg text').textContent(),'NCC-080470');
   assert.equal(await page.locator('#quickLinks img').count(),12);
   console.log('PASS monitor settings, menu routing, update states, NCC lettering and icon slots');
+  await page.getByRole('button',{name:'ARGOS ATLAS in Tactical öffnen',exact:true}).click();
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='linkOpen'&&x.linkId==='5')));
+  assert.equal(await page.locator('#quickLinks img').nth(5).getAttribute('src'),'https://argosatlas.com/favicon.svg');
   assert.equal(await visible(),8);console.log('PASS exactly eight visible quicklaunch tiles');
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=el.scrollHeight);
   assert(await page.locator('#quickLinks').evaluate(el=>el.scrollTop>0));assert.equal(await visible(),8);
-  await page.getByRole('button',{name:'Eigener Link 7 in Tactical öffnen',exact:true}).click();
+  await page.getByRole('button',{name:'Eigener Link 6 in Tactical öffnen',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='linkOpen'&&x.linkId==='11')));console.log('PASS scroll and open last link');
   await page.locator('#addLink').click();await page.locator('#linkName').fill('Neu');await page.locator('#linkUrl').fill('https://example.org/');await page.locator('#saveLink').click();
   await page.waitForFunction(()=>!document.querySelector('#linkDialog').open);assert.equal(await page.locator('#quickLinks button').count(),13);
@@ -110,12 +129,13 @@ const server=http.createServer((req,res)=>{
   console.log('PASS all three status renderings');
   await page.screenshot({path:path.resolve(__dirname,'../qa/before-zoom.png')});
   console.log('Zoom target diagnostics', await page.locator('#globe').evaluate(el=>{const r=el.getBoundingClientRect();const target=document.elementFromPoint(r.left+200,r.top+160);return {tag:target?.tagName,css:target?.className,text:document.querySelector('.cesium-widget-errorPanel')?.textContent};}));
-  const before=await page.evaluate(()=>viewer.camera.positionCartographic.height);
+  // Isolate wheel behavior from a still-running EARTH camera flight/rotation.
+  const before=await page.evaluate(()=>{earthMotion.enabled=false;viewer.camera.cancelFlight();stopSmoothZoom();viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(16.3738,48.2082,26000000)});viewer.scene.requestRender();return viewer.camera.positionCartographic.height;});
   await page.locator('#globe').hover({position:{x:200,y:160}});await page.mouse.wheel(0,-120);
   // A browser wheel dispatch may return before its event is handled on CI.
   await page.waitForFunction(previous=>viewer.camera.positionCartographic.height < previous, before);
   await page.waitForFunction(()=>zoomTarget===null);
-  const after=await page.evaluate(()=>viewer.camera.positionCartographic.height);assert(after<before&&after/before>.95, 'wheel height before='+before+' after='+after);console.log('PASS real Cesium wheel <5% height change');
+  const after=await page.evaluate(()=>viewer.camera.positionCartographic.height);assert(after<before&&after/before>.985, 'wheel height before='+before+' after='+after);console.log('PASS real Cesium wheel <1.5% height change');
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=0);
   const shot=path.resolve(__dirname,'../qa');fs.mkdirSync(shot,{recursive:true});
   await page.screenshot({path:path.join(shot,'dashboard-1500.png')});
@@ -124,6 +144,7 @@ const server=http.createServer((req,res)=>{
   for(const [width,height] of [[1280,720],[1200,740],[950,590],[1920,1080]]){
    await page.setViewportSize({width,height});
    await page.waitForFunction(()=>{const r=document.querySelector('#quickLinks').getBoundingClientRect();return [...document.querySelectorAll('#quickLinks button')].filter(b=>{const q=b.getBoundingClientRect();return q.top>=r.top-1&&q.bottom<=r.bottom+1}).length===8;});
+   if(width===1280)await page.screenshot({path:path.join(shot,'dashboard-1280.png')});
    assert.equal(await visible(),8);
    assert(await page.locator('#quickLinks').evaluate(el=>el.clientHeight>0));
    for(const id of ['weatherOn','weatherOff','radar','clouds','rain','heat']){
