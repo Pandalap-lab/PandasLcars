@@ -55,5 +55,6 @@ public sealed class TacticalBrowserView : Grid, IDisposable
         catch (Exception ex) when (ex is not OutOfMemoryException)
         { if (!disposed) status.Text = "Browser konnte nicht starten. Ansicht schließen und erneut versuchen oder in Firefox öffnen."; }
     }
+    public void RetryFailedNavigation() { if (!disposed && browser is WebViewBrowser web) web.RetryFailedNavigation(); }
     public void Dispose() { disposed = true; browser.StatusChanged -= UpdateStatus; browser.Dispose(); }
 }

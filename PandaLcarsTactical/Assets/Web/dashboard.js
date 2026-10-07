@@ -4,6 +4,8 @@ const vienna = {name:"Wien",latitude:48.2082,longitude:16.3738,country:"Österre
 const earthMotion=new PandaEarthMotion();
 let nightLayer;
 let place={...vienna}, report=null, weatherEnabled=true, tracking=false, viewer, target, osm, pendingWeather=null, pendingSearch=null, generation=0, forecastTimer;
+let internetOnline=null, searchNeedsRetry=false;
+window.pandaInternetOnline=null;
 const selections={heat:true,clouds:false,rain:false};
 const defaultTargets=[vienna,{name:"Delhi",latitude:28.6139,longitude:77.209,country:"Indien"},{name:"Pune",latitude:18.5204,longitude:73.8567,country:"Indien"},{name:"Pandharpur",latitude:17.6778,longitude:75.3278,country:"Indien"},{name:"Ahmedabad",latitude:23.0225,longitude:72.5714,country:"Indien"},{name:"Berlin",latitude:52.52,longitude:13.405,country:"Deutschland"}];
 const targetKey=p=>[p.name.trim().toLocaleLowerCase("de-AT"),p.latitude.toFixed(5),p.longitude.toFixed(5)].join("|");
@@ -138,7 +140,7 @@ function setWeather(on){
  weatherEnabled=on;syncSwitches();syncRadar();eventFeed("Wetter-Layer "+(on?"ON":"OFF"));
 }
 function loadWeather(){
- if(pendingWeather)return;
+ if(pendingWeather||internetOnline===false)return;
  const id="weather-"+(++generation);pendingWeather=id;
  $("weatherStatus").textContent="Wetter und Vorhersage werden geladen …";
  $("forecastStatus").textContent="Aktualisierung …";
@@ -204,17 +206,18 @@ function renderForecast(){
 }
 window.chrome?.webview?.addEventListener("message",event=>{
  const msg=event.data;
+ if(msg.type==="connectivity"){applyInternetStatus(msg);return;}
  if(msg.type==="system"){renderSystem(msg.data);return;} 
  if(msg.type==="radar"&&msg.id===pendingRadar){pendingRadar=null;showRadar(msg.data);return;} 
  if(msg.type==="error"&&msg.id===pendingRadar&&pendingRadar){pendingRadar=null;removeRadar();radarStatus("Radar nicht verfügbar · erneut einschalten",true);return;}
  if(msg.type==="weather"&&msg.id===pendingWeather){
-  pendingWeather=null;report=msg.data;renderWeather();renderForecast();$("connection").textContent="DATENVERBINDUNG AKTIV";
+  pendingWeather=null;report=msg.data;renderWeather();renderForecast();if(internetOnline===null)$("connection").textContent="INTERNET WIRD GEPRÜFT";
   eventFeed("Wetter aktualisiert: "+place.name+", "+f(report.current.temperatureC)+" °C.");
  }else if(msg.type==="search"&&msg.id===pendingSearch){
-  pendingSearch=null;rememberTargets(msg.data);$("searchStatus").textContent=msg.data.length?msg.data.length+" Treffer oben · bisherige Ziele bleiben erhalten":"Kein neuer Treffer · gespeicherte Ziele bleiben erhalten";
+  pendingSearch=null;searchNeedsRetry=false;rememberTargets(msg.data);$("searchStatus").textContent=msg.data.length?msg.data.length+" Treffer oben · bisherige Ziele bleiben erhalten":"Kein neuer Treffer · gespeicherte Ziele bleiben erhalten";
  }else if(msg.type==="error"){
-  if(pendingWeather&&msg.id===pendingWeather){pendingWeather=null;report=null;renderWeather();renderForecast();$("weatherStatus").textContent=msg.message;$("forecastStatus").textContent="Keine aktuellen Daten";$("connection").textContent="DATEN NICHT VERFÜGBAR";eventFeed("Wetter: "+msg.message,true);}
-  if(pendingSearch&&msg.id===pendingSearch){pendingSearch=null;$("searchStatus").textContent=msg.message;eventFeed("Ortssuche fehlgeschlagen.",true);}
+  if(pendingWeather&&msg.id===pendingWeather){pendingWeather=null;report=null;renderWeather();renderForecast();$("weatherStatus").textContent=msg.message;$("forecastStatus").textContent="Keine aktuellen Daten";eventFeed("Wetter: "+msg.message,true);}
+  if(pendingSearch&&msg.id===pendingSearch){pendingSearch=null;searchNeedsRetry=true;$("searchStatus").textContent=msg.message;eventFeed("Ortssuche fehlgeschlagen.",true);}
  }else if(msg.type==="notice"){eventFeed(msg.message,msg.error===true);}
 });
 async function initializeGlobe(){
@@ -225,6 +228,7 @@ async function initializeGlobe(){
   viewer.scene.backgroundColor=Cesium.Color.BLACK;
   viewer.clock.shouldAnimate=false;
   viewer.clock.currentTime=Cesium.JulianDate.now();
+  viewer.scene.light=new Cesium.SunLight();
   viewer.scene.globe.enableLighting=true;
   viewer.scene.globe.lightingFadeOutDistance=0;
   viewer.scene.globe.lightingFadeInDistance=1;
@@ -247,7 +251,7 @@ async function initializeGlobe(){
    const night=await Cesium.SingleTileImageryProvider.fromUrl("earth-night.jpg",{rectangle:Cesium.Rectangle.MAX_VALUE,credit:"NASA Earth Observatory · Black Marble 2016 (kein Livebild)"});
    nightLayer=viewer.imageryLayers.addImageryProvider(night);nightLayer.dayAlpha=0;nightLayer.nightAlpha=1;
   }catch{eventFeed("Nachtkarte nicht verfügbar; Tag-/Nachtbeleuchtung bleibt aktiv.",true);}
-  osm=viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({url:"https://tile.openstreetmap.org/",maximumLevel:19,credit:"© OpenStreetMap contributors"}));osm.alpha=0;
+  createDetailMap(0);
   viewer.camera.percentageChanged=.02;
   viewer.camera.changed.addEventListener(()=>{
    const height=viewer.camera.positionCartographic.height;
@@ -256,8 +260,6 @@ async function initializeGlobe(){
    if(Math.abs(osm.alpha-alpha)>.01){osm.alpha=alpha;viewer.scene.requestRender();}
    $("mapScale").textContent=(height>10000?Math.round(height/1000).toLocaleString("de-AT")+" km":Math.round(height).toLocaleString("de-AT")+" m")+" · "+(alpha>.6?"ORTSKARTE":"ERDANSICHT");
   });
-  let tileErrorNoted=false;
-  osm.imageryProvider.errorEvent.addEventListener(()=>{if(!tileErrorNoted){eventFeed("Detailkarten nicht erreichbar; Weltkarte bleibt verfügbar.",true);tileErrorNoted=true;}});
   target=viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude),
    viewFrom:new Cesium.Cartesian3(0,-150000,180000)});
   const targetIcon=document.createElement("img");targetIcon.id="targetIcon";targetIcon.className="map-symbol";targetIcon.src="target-reticle.png";targetIcon.alt="Tactical-Ziel";targetIcon.width=40;targetIcon.height=40;document.querySelector(".map-wrap").append(targetIcon);
@@ -275,9 +277,42 @@ async function initializeGlobe(){
   new ResizeObserver(()=>{viewer.resize();viewer.scene.requestRender();}).observe($("globe"));
  }catch(error){$("mapError").hidden=false;eventFeed("3D-Karte konnte nicht gestartet werden.",true);}
 }
+function createDetailMap(alpha){
+ const index=osm?viewer.imageryLayers.indexOf(osm):viewer.imageryLayers.length;
+ if(osm)viewer.imageryLayers.remove(osm,true);
+ osm=viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({url:"https://tile.openstreetmap.org/",maximumLevel:19,credit:"© OpenStreetMap contributors"}),index);osm.alpha=alpha;
+ let noted=false;osm.imageryProvider.errorEvent.addEventListener(()=>{if(!noted){noted=true;eventFeed("Detailkarten nicht erreichbar; Weltkarte bleibt verfügbar.",true);}});
+}
+function applyInternetStatus(msg){
+ const before=internetOnline;internetOnline=msg.connected===true;window.pandaInternetOnline=internetOnline;
+ $("connection").textContent=internetOnline?"INTERNET VERBUNDEN":"INTERNET OFFLINE";
+ $("connection").title=(msg.link||"Netzwerk")+(internetOnline?" · Internetzugriff geprüft":msg.networkAvailable?" verbunden, Internet nicht erreichbar · erneute Prüfung automatisch":" noch nicht verbunden · erneute Prüfung automatisch");
+ if(before===internetOnline)return;
+ if(!internetOnline){
+  send("cancelWeather");pendingWeather=null;
+  searchNeedsRetry=searchNeedsRetry||!!pendingSearch;send("cancelSearch");pendingSearch=null;
+  pendingRadar=null;removeRadar();
+  $("weatherStatus").textContent="Internet offline · automatische Wiederholung";
+  if(radarWanted)radarStatus("Internet offline · Radar lädt nach Wiederverbindung");
+  eventFeed("Internet offline. Verbindung wird erneut geprüft.",true);return;
+ }
+ eventFeed("Internet verbunden · Online-Daten werden nachgeladen.");
+ send("cancelWeather");pendingWeather=null;loadWeather();
+ if(viewer&&osm){createDetailMap(osm.alpha);viewer.scene.requestRender();}
+ pendingRadar=null;lastRadarRequest=0;syncRadar();
+ if(searchNeedsRetry){const query=$("search").value.trim();if(query.length>=2){pendingSearch="search-"+(++generation);send("search",{id:pendingSearch,query});}searchNeedsRetry=false;}
+ window.dispatchEvent(new Event("panda-internet-restored"));send("updateCheck");
+}
+function applyEarthLighting(){
+ if(!viewer)return;
+ viewer.scene.globe.enableLighting=earthMotion.earth;
+ if(nightLayer){nightLayer.show=earthMotion.earth;nightLayer.dayAlpha=0;nightLayer.nightAlpha=1;}
+ if(radarLayer){radarLayer.dayAlpha=1;radarLayer.nightAlpha=1;}
+ viewer.scene.requestRender();
+}
 function setEarthMode(enabled){
  earthMotion.earth=enabled;syncEarthButton();
- if(viewer){viewer.scene.globe.enableLighting=enabled;if(nightLayer)nightLayer.show=enabled;viewer.scene.requestRender();}
+ applyEarthLighting();
 }
 function syncEarthButton(){
  const running=earthMotion.earth&&earthMotion.enabled;
@@ -377,8 +412,8 @@ $("search").addEventListener("input",()=>{
  if(!$("search").value.trim()){pendingSearch=null;send("cancelSearch");renderTargets(targetList);$("searchStatus").textContent="Ziel wählen · Entfernung ab Wien";}
 });
 
-window.addEventListener("online",()=>{eventFeed("Netzwerk wieder verfügbar.");loadWeather();});
-window.addEventListener("offline",()=>{eventFeed("Netzwerkverbindung unterbrochen.",true);$("connection").textContent="OFFLINE";});
+window.addEventListener("online",()=>send("connectivity"));
+window.addEventListener("offline",()=>send("connectivity"));
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){clock();if(!report||Date.now()-new Date(report.current.validAt).getTime()>600000)loadWeather();}});
 drawArtwork();clock();setInterval(clock,1000);describePlace();renderTargets(targetList);syncSwitches();
 if(targetStorageFailed)eventFeed("Gespeicherte Ziele konnten nicht gelesen werden.",true);
@@ -427,7 +462,7 @@ function radarStatus(message,error=false){
 }
 function removeRadar(){if(radarLayer&&viewer){viewer.imageryLayers.remove(radarLayer,true);radarLayer=null;viewer.scene.requestRender();}}
 function requestRadar(){
- if(!radarWanted||!weatherEnabled||!viewer||pendingRadar)return;
+ if(!radarWanted||!weatherEnabled||!viewer||pendingRadar||internetOnline===false)return;
  pendingRadar="radar-"+(++generation);lastRadarRequest=Date.now();radarStatus("Regenradar wird geladen …");send("radar",{id:pendingRadar});
 }
 function showRadar(frame){
@@ -442,7 +477,7 @@ function showRadar(frame){
   return image;
  };
  let failed=false;provider.errorEvent.addEventListener(()=>{if(!failed){failed=true;radarStatus("Radarkacheln nicht verfügbar oder unvollständig",true);}});
- radarLayer=viewer.imageryLayers.addImageryProvider(provider);radarLayer.alpha=.7;
+ radarLayer=viewer.imageryLayers.addImageryProvider(provider);radarLayer.alpha=.7;applyEarthLighting();
  const stamp=new Date(frame.generatedAt).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
  radarStatus("Regenradar · Bildstand "+stamp+" · Abdeckung regional");viewer.scene.requestRender();eventFeed("Regenradar geladen · "+stamp);
 }
@@ -467,3 +502,5 @@ document.addEventListener("keydown",event=>{if(event.key==="F11"){event.preventD
 
 $("weatherInfo").onclick=()=>{$("weatherInfoText").textContent=$("weatherStatus").textContent;$("weatherInfoDialog").showModal();};
 $("closeWeatherInfo").onclick=()=>$("weatherInfoDialog").close();
+
+$("connection").textContent="INTERNET WIRD GEPRÜFT";send("connectivity");

@@ -26,7 +26,7 @@
   const on=typeof viewer!=="undefined"&&viewer&&earthMotion.earth&&earthMotion.enabled&&!document.hidden;
   if(!on){if(active)clear();active=false;status.hidden=true;locate.hidden=true;return;}
   active=true;status.hidden=false;locate.hidden=false;locate.disabled=!record;if(!projectionInstalled){viewer.scene.postRender.addEventListener(project);projectionInstalled=true;}const now=Date.now();
-  if(!pending&&now>=nextFetch){pending=true;nextFetch=now+300000;window.chrome?.webview?.postMessage({type:"issOrbit"});setTimeout(()=>{pending=false;},30000);}
+  if(window.pandaInternetOnline!==false&&!pending&&now>=nextFetch){pending=true;nextFetch=now+300000;window.chrome?.webview?.postMessage({type:"issOrbit"});setTimeout(()=>{pending=false;},30000);}
   if(!record){status.textContent="ISS · Bahndaten werden geladen / nicht verfügbar";return;}
   const age=now-epoch;
   if(age>7*86400000||age< -86400000){locate.disabled=true;clear();status.textContent="ISS · Bahndaten veraltet – Position ausgeblendet";return;}
@@ -53,5 +53,6 @@
   if(m.data){try{const omm=JSON.parse(m.data)[0];epoch=Date.parse(omm.EPOCH+(/[zZ]|[+-]\d\d:\d\d$/.test(omm.EPOCH)?"":"Z"));if(!Number.isFinite(epoch)||omm.NORAD_CAT_ID!==25544)throw Error();record=satellite.json2satrec(omm);nextFetch=Date.now()+2*3600000;clear();}catch{record=null;}}
   update();
  });
+ window.addEventListener("panda-internet-restored",()=>{nextFetch=0;pending=false;update();});
  window.addEventListener("panda-earth-change",update);document.addEventListener("visibilitychange",update);setInterval(update,1000);
 })();

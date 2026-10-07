@@ -9,7 +9,7 @@ namespace PandaLcarsTactical.Browser;
 public sealed class WebViewBrowser : IEmbeddedBrowser
 {
     private readonly WebView2 web = new();
-    private bool disposed;
+    private bool disposed, navigationFailed;
     private string? currentUrl;
     public FrameworkElement View => web;
     public string? Source => currentUrl;
@@ -42,7 +42,7 @@ public sealed class WebViewBrowser : IEmbeddedBrowser
         };
         core.SourceChanged += (_, _) => StatusChanged?.Invoke("Lädt …");
         core.HistoryChanged += (_, _) => StatusChanged?.Invoke("Navigation bereit");
-        core.NavigationCompleted += (_, e) => StatusChanged?.Invoke(e.IsSuccess ? "Bereit" : "Seite nicht erreichbar (" + e.WebErrorStatus + "). Erneut laden oder in Firefox öffnen.");
+        core.NavigationCompleted += (_, e) => { navigationFailed = !e.IsSuccess && e.WebErrorStatus != CoreWebView2WebErrorStatus.OperationCanceled; StatusChanged?.Invoke(e.IsSuccess ? "Bereit" : "Seite nicht erreichbar (" + e.WebErrorStatus + "). Erneut laden oder in Firefox öffnen."); };
         core.ProcessFailed += (_, _) => StatusChanged?.Invoke("Browserprozess beendet. Ansicht schließen und erneut öffnen.");
         core.DownloadStarting += (_, e) => { e.Cancel = true; StatusChanged?.Invoke("Downloads bitte über „In Firefox öffnen“ starten."); };
     }
@@ -53,6 +53,7 @@ public sealed class WebViewBrowser : IEmbeddedBrowser
     }
     public void GoBack() { if (CanGoBack) web.CoreWebView2.GoBack(); }
     public void Reload() => web.CoreWebView2?.Reload();
+    public void RetryFailedNavigation() { if (navigationFailed && !disposed && currentUrl is not null) { navigationFailed = false; Navigate(currentUrl); } }
     public void Stop() => web.CoreWebView2?.Stop();
     public void Dispose() { disposed = true; web.Close(); }
 }

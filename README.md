@@ -82,3 +82,7 @@ Größere Tactical-Karte, kompakte Wetter-/Astronomieansicht nebeneinander, LAYE
 ## Update 0.6.5
 
 Kompakte Wetteransicht, ausgerichtete Sonne-/Mondzeiten, ausgeschriebener Wochentag, transparente Target-/ISS-Symbole, ISS ANZEIGEN, Website-Icons und gleich hohe Quicklaunch-/Targets-Balken. [Änderungen und Prüfungen](docs/release-0.6.5.md).
+
+## Update 0.6.6
+
+Internetprüfung beim Start und automatische Wiederherstellung der Online-Bereiche; abgesicherte Earth-/Radar-Beleuchtung mit Pixeltests. [Details und Prüfgrenzen](docs/release-0.6.6.md).

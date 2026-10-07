@@ -17,7 +17,7 @@ public sealed class SiteIconService
     {
         directory = cacheDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "SiteIcons");
         http = new HttpClient(handler ?? new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false }) { Timeout = TimeSpan.FromSeconds(12) };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("PandasLcars/0.6.5 (+https://github.com/Pandalap-lab/PandasLcars)");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("PandasLcars/0.6.6 (+https://github.com/Pandalap-lab/PandasLcars)");
     }
     public static bool PublicAddress(IPAddress address)
     {
@@ -73,6 +73,7 @@ public sealed class SiteIconService
             Regex.IsMatch(Encoding.UTF8.GetString(bytes), "^\\s*(?:<\\?xml[^>]*>\\s*)?(?:<!--.*?-->\\s*)*<svg\\b", RegexOptions.Singleline, TimeSpan.FromSeconds(1)) ? "image/svg+xml" : null;
         return mime is null ? null : "data:" + mime + ";base64," + Convert.ToBase64String(bytes);
     }
+    public void RetryFailed() { lock(memory) foreach(var key in memory.Where(x => x.Value.Data is null).Select(x => x.Key).ToArray()) memory.Remove(key); }
     public async Task<string?> GetAsync(string url)
     {
         var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(url)));

@@ -144,6 +144,16 @@ try
  Check(stable.Since == at.AddSeconds(419), "Transition timestamp stable between samples");
 }
 finally { Directory.Delete(testFolder,true); }
+{
+ var transport=new InternetFixtureHandler();using var probeClient=new HttpClient(transport);
+ bool adapter=false;var probe=new PandaLcarsTactical.Connectivity.InternetProbe(probeClient,()=> (adapter,"WLAN"));
+ Check(!(await probe.CheckAsync(CancellationToken.None)).Connected&&transport.Calls==0,"Offline startup does not issue web requests without adapter");
+ adapter=true;Check(!(await probe.CheckAsync(CancellationToken.None)).Connected,"Connected Wi-Fi and captive portal are not Internet");
+ transport.Online=true;Check((await probe.CheckAsync(CancellationToken.None)).Connected,"Internet recovers after Wi-Fi startup without restart");
+ transport.PrimaryBlocked=true;Check((await probe.CheckAsync(CancellationToken.None)).Connected,"Independent service probe handles blocked Microsoft endpoint");
+ transport.Online=false;Check(!(await probe.CheckAsync(CancellationToken.None)).Connected,"Loss of Internet is detected with adapter still up");
+ using var probeCancel=new CancellationTokenSource();probeCancel.Cancel();bool cancelled=false;try{await probe.CheckAsync(probeCancel.Token);}catch(OperationCanceledException){cancelled=true;}Check(cancelled,"Shutdown cancels connectivity checks");
+}
 Console.WriteLine("All weather, radar, system, quicklaunch and activity tests passed.");
 sealed class FixtureHandler(string data):HttpMessageHandler {
  protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){token.ThrowIfCancellationRequested();return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(data)});}
@@ -154,5 +164,14 @@ sealed class OrbitFixtureHandler:HttpMessageHandler {
  protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){
   if(request.RequestUri?.AbsoluteUri!="https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=JSON")throw new Exception("Unexpected orbit endpoint");
   Interlocked.Increment(ref Calls);return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent("[{\"NORAD_CAT_ID\":25544}]")});
+ }
+}
+
+sealed class InternetFixtureHandler:HttpMessageHandler {
+ public bool Online,PrimaryBlocked;public int Calls;
+ protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){
+ token.ThrowIfCancellationRequested();Calls++;bool primary=request.RequestUri!.Host=="www.msftconnecttest.com";
+ var body=Online&&(!primary||!PrimaryBlocked)?primary?"Microsoft Connect Test":"{\"radar\":{\"past\":[]}}":"<html>Sign in to Wi-Fi</html>";
+ return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(body)});
  }
 }

@@ -38,6 +38,13 @@ public sealed partial class MainWindow : Window
     private bool updateBusy;
     private readonly SiteIconService siteIcons = new();
     private IssOrbitService? issOrbit;
+    private readonly DispatcherTimer internetTimer = new() { Interval = TimeSpan.FromSeconds(10) };
+    private readonly CancellationTokenSource lifetime = new();
+    private readonly HttpClient internetHttp = new(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
+    private bool probingInternet;
+    private bool? internetConnected;
+    private int offlineChecks;
+    private DateTimeOffset lastInternetCheck;
     public MainWindow()
     {
         InitializeComponent();
@@ -58,12 +65,14 @@ public sealed partial class MainWindow : Window
         activityTimer.Tick += async (_, _) => { await RefreshSystemAsync(); UpdateActivity(); };
         activityTimer.Start();
         provider = new OpenMeteoProvider(http);
+        internetTimer.Tick += async (_, _) => await CheckInternetAsync();
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1500, 980));
         displayTimer.Tick += (_, _) => { if (PlaceOnMonitor() || ++displayAttempts >= 30) displayTimer.Stop(); };
         awaitingMonitor = !PlaceOnMonitor();
         Closed += (_, _) =>
         {
             closed = true; weatherRequest?.Cancel(); searchRequest?.Cancel();
+            lifetime.Cancel(); internetTimer.Stop(); internetHttp.Dispose();
             activityTimer.Stop(); displayTimer.Stop(); tacticalBrowser?.Dispose();
             Dashboard.Close(); http.Dispose();
             _ = DisposeMonitorAsync();
@@ -118,6 +127,22 @@ public sealed partial class MainWindow : Window
             try { Settings.AtomicFile.Write(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "startup-error.txt"), ex.ToString()); } catch { }
         }
     }
+    private async Task CheckInternetAsync()
+    {
+        if (closed || probingInternet || DateTimeOffset.UtcNow - lastInternetCheck < TimeSpan.FromSeconds(5)) return;
+        probingInternet = true; lastInternetCheck = DateTimeOffset.UtcNow;
+        try {
+            var state = await new Connectivity.InternetProbe(internetHttp).CheckAsync(lifetime.Token);
+            if (closed) return;
+            if (state.Connected && internetConnected != true) { siteIcons.RetryFailed(); issOrbit?.RetryAfterReconnect(); tacticalBrowser?.RetryFailedNavigation(); }
+            internetConnected = state.Connected;
+            offlineChecks = state.Connected ? 0 : offlineChecks + 1;
+            internetTimer.Interval = TimeSpan.FromSeconds(state.Connected || offlineChecks >= 6 ? 30 : 10);
+            Send(new { type = "connectivity", connected = state.Connected, networkAvailable = state.NetworkAvailable, link = state.Link });
+        } catch (OperationCanceledException) { }
+        catch (ObjectDisposedException) when (closed) { }
+        finally { probingInternet = false; }
+    }
     private void Send(object payload)
     {
         if (!closed && Dashboard.CoreWebView2 is { } core) core.PostWebMessageAsJson(JsonSerializer.Serialize(payload, Json));
@@ -135,6 +160,7 @@ public sealed partial class MainWindow : Window
             messageType = message.GetProperty("type").GetString();
             switch (messageType)
             {
+                case "connectivity": internetTimer.Start(); await CheckInternetAsync(); break;
                 case "displaySettings": SendDisplay(); break;
                 case "displaySave":
                     var monitorId = message.GetProperty("monitorId").GetString();
@@ -335,8 +361,8 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.5"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.5" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.6"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.6" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
         catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
         finally { updateBusy = false; }

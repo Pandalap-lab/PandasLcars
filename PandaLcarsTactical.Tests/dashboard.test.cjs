@@ -168,6 +168,37 @@ const server=http.createServer((req,res)=>{
   assert(!(await page.evaluate(()=>viewer.entities.values.some(e=>e.name==='ISS · berechnete Position'))));
   await page.evaluate(()=>setEarthRotation(false));
   console.log('PASS ISS moves, hides on EARTH OFF and rejects stale orbital data');
+  // Start without Internet, then reconnect while weather/radar requests are stale.
+  await page.evaluate(()=>{window.savedWeather=report;radarWanted=true;testMessage({type:'connectivity',connected:false,networkAvailable:false,link:'KEIN NETZWERK'});});
+  assert.equal(await page.locator('#connection').innerText(),'INTERNET OFFLINE');
+  const beforeReconnect=await page.evaluate(()=>{window.oldMap=osm;window.recoveryCounts={};for(const t of ['weather','radar','updateCheck'])recoveryCounts[t]=testSent.filter(m=>m.type===t).length;return recoveryCounts;});
+  await page.evaluate(()=>testMessage({type:'connectivity',connected:true,networkAvailable:true,link:'WLAN'}));
+  assert.equal(await page.locator('#connection').innerText(),'INTERNET VERBUNDEN');
+  assert(await page.evaluate(()=>osm!==oldMap&&viewer.imageryLayers.contains(osm)),'Failed detail tiles recreated after reconnect');
+  for(const type of ['weather','radar','updateCheck'])assert.equal(await page.evaluate(t=>testSent.filter(m=>m.type===t).length,type),beforeReconnect[type]+1,type+' automatically reloads');
+  await page.evaluate(()=>testMessage({type:'connectivity',connected:true,networkAvailable:true,link:'WLAN'}));
+  assert.equal(await page.evaluate(()=>testSent.filter(m=>m.type==='weather').length),beforeReconnect.weather+1,'Repeated online probe does not duplicate requests');
+  await page.evaluate(()=>testMessage({type:'error',id:pendingWeather,message:'Weather service unavailable'}));
+  assert.equal(await page.locator('#connection').innerText(),'INTERNET VERBUNDEN','Weather service failure must not pretend Internet is offline');
+  await page.evaluate(()=>{report=savedWeather;renderWeather();renderForecast();});
+  console.log('PASS offline startup/reconnection refreshes weather, radar, map and updates once');
+  // View the sun-facing meridian and its opposite, with the real clock/SunLight.
+  await page.evaluate(()=>{earthMotion.enabled=false;setEarthMode(true);viewer.camera.cancelFlight();stopSmoothZoom();viewer.scene.light=new Cesium.SunLight();const now=new Date();window.dayLon=180-(now.getUTCHours()+now.getUTCMinutes()/60)*15;viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(dayLon,0,26000000)});radarWanted=false;syncRadar();});
+  await page.waitForFunction(()=>viewer.scene.globe.tilesLoaded);
+  const brightness=()=>page.evaluate(()=>new Promise(resolve=>{const remove=viewer.scene.postRender.addEventListener(()=>{remove();const gl=viewer.scene.context._gl,pixels=new Uint8Array(32*32*4);gl.readPixels(Math.floor(gl.drawingBufferWidth/2)-16,Math.floor(gl.drawingBufferHeight/2)-16,32,32,gl.RGBA,gl.UNSIGNED_BYTE,pixels);let sum=0;for(let i=0;i<pixels.length;i+=4)sum+=pixels[i]+pixels[i+1]+pixels[i+2];resolve(sum/(32*32*3));});viewer.scene.requestRender();}));
+  const dayBefore=await brightness();assert(dayBefore>30,'Sunlit hemisphere actually renders brightly');
+  await page.evaluate(async data=>{const image=new Image();image.src=data;await image.decode();window.originalRadarRequest=Cesium.UrlTemplateImageryProvider.prototype.requestImage;Cesium.UrlTemplateImageryProvider.prototype.requestImage=function(){return Promise.resolve(image);};radarWanted=true;showRadar({url:'https://radar-fixture.invalid/{z}/{x}/{y}.png',generatedAt:new Date().toISOString()});},'data:image/png;base64,'+fs.readFileSync(path.join(__dirname,'fixtures/radar-2026-10-07.png')).toString('base64'));
+  await page.waitForFunction(()=>viewer.scene.globe.tilesLoaded,null,{timeout:60000});
+  const dayWithRadar=await brightness();assert(Math.abs(dayBefore-dayWithRadar)<5,'Radar does not darken the sunlit hemisphere: '+dayBefore+' vs '+dayWithRadar);
+  await page.screenshot({path:path.resolve(__dirname,'../qa/radar-day.png')});
+  await page.evaluate(()=>viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(dayLon+180,0,26000000)}));
+  await page.waitForFunction(()=>viewer.scene.globe.tilesLoaded,null,{timeout:60000});
+  const nightWithRadar=await brightness();assert(nightWithRadar<dayWithRadar*.6,'Night side remains darker independently of radar');
+  await page.screenshot({path:path.resolve(__dirname,'../qa/radar-night.png')});
+  await page.evaluate(()=>{radarWanted=false;syncRadar();Cesium.UrlTemplateImageryProvider.prototype.requestImage=originalRadarRequest;viewer.scene.light=new Cesium.SunLight();setEarthMode(false);});
+  assert(!(await page.evaluate(()=>viewer.scene.globe.enableLighting||nightLayer.show)),'Radar removal preserves EARTH mode');
+  console.log('PASS rendered pixels: daylight survives radar and night remains dark');
+
   const graphic=await page.evaluate(async()=>{
    const result=[];for(const id of ['targetIcon','issMarker']){const e=document.getElementById(id),img=e.tagName==='IMG'?e:e.querySelector('img');await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height).data;let colored=0,transparent=0;for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]===0)transparent++;if(pixels[i+3]>100&&pixels[i]+pixels[i+1]+pixels[i+2]>150)colored++;}result.push({id,colored,transparent,total:c.width*c.height,corner:pixels[3]});}return result;
   });

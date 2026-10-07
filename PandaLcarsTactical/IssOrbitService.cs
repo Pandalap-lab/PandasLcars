@@ -10,6 +10,7 @@ internal sealed class IssOrbitService(HttpClient http, string? storagePath = nul
     private DateTimeOffset fetched, lastAttempt;
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly string cachePath = storagePath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "iss-orbit.json");
+    public void RetryAfterReconnect() { lastAttempt = DateTimeOffset.MinValue; }
     public async Task<string> GetAsync()
     {
         await gate.WaitAsync();

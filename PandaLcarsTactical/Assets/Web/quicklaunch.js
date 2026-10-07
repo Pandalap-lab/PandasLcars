@@ -39,6 +39,7 @@
   }
   renderManage(); sizeRows();
  }
+ window.addEventListener("panda-internet-restored",()=>{for(const button of $("quickLinks").children){const img=button.querySelector("img");if(!img?.naturalWidth||img.hidden)send("siteIcon",{linkId:button.dataset.linkId});}});
  function sizeRows() {
   const grid = $("quickLinks");
   // Up to two complete rows. Small touch screens use one taller row.
