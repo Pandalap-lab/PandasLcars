@@ -16,7 +16,10 @@ Quelle: [LCARS Dashboard in Notion](https://www.notion.so/3f2846adf71081cd8da5cf
 - [x] Fehlgeschlagene Ortssuche und Tactical-Web-Navigation wiederholen; keine Formular-POST-Wiederholung.
 - [x] Offline-/Online-Wechsel und einzelne Dienstausfälle automatisch getestet.
 - [x] Neuer Windows-Build nativ gestartet: INTERNET VERBUNDEN, Wetter/Forecast/ISS/Icons geladen, Terminatorkante sichtbar. Nach Laden echter Radarkacheln bleiben Tagesseite, Nachtseite und Niederschlagsfarben korrekt sichtbar.
-- [ ] GitHub: Installation, Upgrade 0.6.5 → 0.6.6, Datenerhalt, erneute Installation, Deinstallation.
-- [ ] Veröffentlichung und echter Installer-Download mit Prüfsumme.
+- [x] GitHub: Installation, Upgrade 0.6.5 → 0.6.6, Datenerhalt, erneute Installation, Deinstallation.
+- [x] Veröffentlichung und echter Installer-Download mit Prüfsumme.
 
 Keine Änderungen an PrivatKI, WLAN-Einstellungen, Norton oder Notion-Aufgabenstatus. Der reale Windows-Kaltstart mit verzögerter WLAN-Anmeldung bleibt eine Prüfung auf dem Laptop.
+
+Abschluss: Release v0.6.6 aus Commit 97a2931 veröffentlicht. GitHub-Lauf 37675450983 erfolgreich; echter Update-Download mit SHA-256 bestätigt. Updateangebot für 0.6.0–0.6.5, kein Update für 0.6.6. Zusätzliche Testinstanz geschlossen; installierte Anwendung nicht ersetzt.
+
