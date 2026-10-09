@@ -12,7 +12,7 @@ public sealed class TacticalBrowserView : Grid, IDisposable
     private readonly Button back = new() { Content = "← ZURÜCK", MinHeight = 40 };
     private bool disposed;
     public event Action? CloseRequested;
-    public TacticalBrowserView(IEmbeddedBrowser browser, string name)
+    public TacticalBrowserView(IEmbeddedBrowser browser, string name, bool portal = false)
     {
         this.browser = browser;
         Background = new SolidColorBrush(Microsoft.UI.Colors.Black);
@@ -21,13 +21,13 @@ public sealed class TacticalBrowserView : Grid, IDisposable
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        var title = new TextBlock { Text = "TACTICAL WEB  //  " + name.ToUpperInvariant(), FontSize = 24, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 173, 72)), Margin = new Thickness(8) };
+        var title = new TextBlock { Text = (portal ? "PANDAs  //  " : "TACTICAL WEB  //  ") + name.ToUpperInvariant(), FontSize = 24, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 173, 72)), Margin = new Thickness(8) };
         Children.Add(title);
         var toolbar = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 4, 0, 8) };
         for (int i = 0; i < 5; i++) toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = i == 2 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
         var reload = new Button { Content = "↻ LADEN", MinHeight = 40 };
         var firefox = new Button { Content = "IN FIREFOX ÖFFNEN", MinHeight = 40 };
-        var close = new Button { Content = "BACK", MinHeight = 40, Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 173, 72)), Foreground = new SolidColorBrush(Microsoft.UI.Colors.Black) };
+        var close = new Button { Content = portal ? "ZURÜCK ZU LCARS" : "BACK", MinHeight = 40, Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 173, 72)), Foreground = new SolidColorBrush(Microsoft.UI.Colors.Black) };
         var controls = new FrameworkElement[] { back, reload, address, firefox, close };
         for (int i = 0; i < controls.Length; i++) { SetColumn(controls[i], i); toolbar.Children.Add(controls[i]); }
         SetRow(toolbar, 1); Children.Add(toolbar);

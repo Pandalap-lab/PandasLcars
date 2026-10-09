@@ -113,12 +113,13 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('.ship svg text').textContent(),'NCC-080470');
   assert.equal(await page.locator('#quickLinks img').count(),12);
   console.log('PASS monitor settings, menu routing, update states, NCC lettering and icon slots');
+  await page.locator('#openAppSettings').click();
   await page.getByRole('button',{name:'ARGOS ATLAS in Tactical öffnen',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='linkOpen'&&x.linkId==='5')));
   assert((await page.locator('#quickLinks img').nth(5).getAttribute('src')).startsWith('data:image/'));assert(await page.locator('#quickLinks img').nth(5).evaluate(e=>e.naturalWidth>0));
-  assert.equal(await visible(),8);console.log('PASS exactly eight visible quicklaunch tiles');
+  assert(await page.locator('#quickLinks').isVisible());
   await page.locator('#quickLinks').evaluate(el=>el.scrollTop=el.scrollHeight);
-  assert(await page.locator('#quickLinks').evaluate(el=>el.scrollTop>0));assert.equal(await visible(),8);
+  assert(await page.locator('#quickLinks').evaluate(el=>el.scrollTop>0));
   await page.getByRole('button',{name:'Eigener Link 6 in Tactical öffnen',exact:true}).click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='linkOpen'&&x.linkId==='11')));console.log('PASS scroll and open last link');
   await page.locator('#addLink').click();await page.locator('#linkName').fill('Neu');await page.locator('#linkUrl').fill('https://example.org/');await page.locator('#saveLink').click();
@@ -127,6 +128,7 @@ const server=http.createServer((req,res)=>{
   await page.waitForFunction(()=>document.querySelector('#quickLinks button:last-child').dataset.url==='https://changed.example.net/'&&document.querySelector('#quickLinks button:last-child img').src.startsWith('data:image/')&&atob(document.querySelector('#quickLinks button:last-child img').src.split(',')[1]).includes('red'));
   assert(await page.locator('#quickLinks img').last().evaluate(e=>e.naturalWidth>0));
   await page.locator('#manageLinks').click();await page.locator('.manage-row').last().getByText('LÖSCHEN',{exact:true}).click();await page.locator('.manage-row').last().getByText('WIRKLICH LÖSCHEN?',{exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('#quickLinks button').length===12);await page.locator('#closeManage').click();console.log('PASS add, edit, delete dialog wiring');
+  await page.locator('#closeAppSettings').click();
   for(const mode of ['WORK','STANDBY','WARP']){
    await page.evaluate(mode=>testMessage({type:'activity',data:{mode,since:new Date().toISOString(),idleSeconds:mode==='STANDBY'?180:0,load:22,warpRequested:mode==='WARP'}}),mode);
    assert.equal(await page.locator('#shipMode').innerText(),mode);
@@ -199,6 +201,33 @@ const server=http.createServer((req,res)=>{
   assert(!(await page.evaluate(()=>viewer.scene.globe.enableLighting||nightLayer.show)),'Radar removal preserves EARTH mode');
   console.log('PASS rendered pixels: daylight survives radar and night remains dark');
 
+  await page.locator('[data-action="web"]').click();
+  assert(await page.evaluate(()=>testSent.some(m=>m.type==='menu'&&m.action==='web')));
+  assert(await page.evaluate(()=>testSent.some(m=>m.type==='waterLevel')));
+  await page.evaluate(()=>testMessage({type:'waterLevel',state:'error'}));
+  assert((await page.locator('#waterStatus').innerText()).includes('nicht verfügbar'));
+  await page.locator('#waterOpen').click();
+  assert(await page.evaluate(()=>testSent.some(m=>m.type==='menu'&&m.action==='water')));
+  await page.evaluate(()=>testMessage({type:'waterLevel',state:'ready',fetchedAt:new Date().toISOString(),data:document.querySelector('#targetIcon').src}));
+  // Only data PNGs from the isolated chart renderer are accepted.
+  assert(await page.locator('#waterImage').isHidden());
+  await page.evaluate(data=>testMessage({type:'waterLevel',state:'ready',fetchedAt:new Date().toISOString(),data}),'data:image/png;base64,'+fs.readFileSync(path.join(__dirname,'fixtures/radar-2026-10-07.png')).toString('base64'));
+  await page.waitForFunction(()=>!document.querySelector('#waterImage').hidden);
+  assert((await page.locator('#waterStatus').innerText()).includes('Hydro NÖ'));
+  await page.evaluate(()=>testMessage({type:'waterLevel',state:'error'}));
+  assert((await page.locator('#waterStatus').innerText()).includes('NICHT AKTUELL'));
+  assert(await page.locator('#waterImage').isVisible(),'Last fetched original remains visible but explicitly stale');
+  // This is only a transport fixture, not a water-level measurement or release screenshot.
+  await page.evaluate(()=>{document.querySelector('#waterImage').hidden=true;document.querySelector('#waterStatus').textContent='Test: Originalquelle wird im Windows-Build geprüft';});
+  await page.evaluate(data=>testMessage({type:'waterLevel',state:'ready',fetchedAt:new Date().toISOString(),data}),'data:image/png;base64,'+fs.readFileSync(path.join(__dirname,'fixtures/radar-2026-10-07.png')).toString('base64'));
+  await page.waitForFunction(()=>!document.querySelector('#waterImage').hidden);
+  assert((await page.locator('#waterStatus').innerText()).includes('Hydro NÖ'));
+  await page.evaluate(()=>testMessage({type:'waterLevel',state:'error'}));
+  assert((await page.locator('#waterStatus').innerText()).includes('NICHT AKTUELL'));
+  assert(await page.locator('#waterImage').isVisible(),'Last fetched original remains visible but explicitly stale');
+  // This is only a transport fixture, not a water-level measurement or release screenshot.
+  await page.evaluate(()=>{document.querySelector('#waterImage').hidden=true;document.querySelector('#waterStatus').textContent='Test: Originalquelle wird im Windows-Build geprüft';});
+  console.log('PASS portal action, water chart request, error state and source action');
   const graphic=await page.evaluate(async()=>{
    const result=[];for(const id of ['targetIcon','issMarker']){const e=document.getElementById(id),img=e.tagName==='IMG'?e:e.querySelector('img');await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height).data;let colored=0,transparent=0;for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]===0)transparent++;if(pixels[i+3]>100&&pixels[i]+pixels[i+1]+pixels[i+2]>150)colored++;}result.push({id,colored,transparent,total:c.width*c.height,corner:pixels[3]});}return result;
   });
@@ -207,7 +236,6 @@ const server=http.createServer((req,res)=>{
   console.log('PASS real raster pixels: transparent corners and colored symbols, transparent city label');
   for(const [width,height] of [[1280,720],[1200,740],[950,590],[1920,1080]]){
    await page.setViewportSize({width,height});
-   await page.waitForFunction(()=>{const r=document.querySelector('#quickLinks').getBoundingClientRect();return [...document.querySelectorAll('#quickLinks button')].filter(b=>{const q=b.getBoundingClientRect();return q.top>=r.top-1&&q.bottom<=r.bottom+1}).length===8;});
    if(width===1280){
     const layout=await page.evaluate(()=>{const b=s=>document.querySelector(s).getBoundingClientRect();return {map:b('.map-wrap').height,weatherRight:b('.weather-compact').right,sunLeft:b('.celestial-panel').left,scaleRight:b('.map-scale').right,controlsLeft:b('.map-controls').left};});
     assert(layout.map>230,'Map is taller than old 184px at 720p');
@@ -216,8 +244,8 @@ const server=http.createServer((req,res)=>{
     assert(layout.sunLeft>=layout.weatherRight,'Sun/moon beside weather');assert(layout.scaleRight<layout.controlsLeft,'Altitude clear of controls');
    }
    if(width===1280)await page.screenshot({path:path.join(shot,'dashboard-1280.png')});
-   assert.equal(await visible(),8);
-   assert(await page.locator('#quickLinks').evaluate(el=>el.clientHeight>0));
+   assert(await page.locator('#waterOpen').isVisible());
+   assert(await page.locator('#waterOpen').evaluate(el=>el.clientHeight>0));
    for(const id of ['weatherOn','weatherOff','radar','clouds','rain','heat']){
     assert(await page.locator('#'+id).isVisible(),id+' stays visible after repeated LAYERS clicks');
     const bounds=await page.locator('#'+id).boundingBox();
@@ -232,12 +260,12 @@ const server=http.createServer((req,res)=>{
    assert(await page.evaluate(()=>[...document.querySelectorAll('.celestial-events>span')].every(e=>{const b=e.querySelector('b').getBoundingClientRect(),r=e.getBoundingClientRect(),s=e.querySelector('span').getBoundingClientRect();return b.right+6<r.right&&b.left-s.right<6;})),'Times beside label and clear of border');
    assert(await page.evaluate(()=>Math.abs(document.querySelector('.quick h2').getBoundingClientRect().height-document.querySelector('.targets h2').getBoundingClientRect().height)<1),'Quicklaunch and Targets header equal height');
   }
-  console.log('PASS eight-tile layout at 950x590, 1200x740, 1500x940 and 1920x1080');
+  console.log('PASS water chart panel layout at 950x590, 1200x740, 1500x940 and 1920x1080');
   await page.screenshot({path:path.join(shot,'dashboard-1920.png')});
   const touch=await browser.newContext({viewport:{width:950,height:590},hasTouch:true});
   const touchPage=await touch.newPage();
   await touchPage.goto('http://127.0.0.1:'+server.address().port+'/Web/index.html');
-  await touchPage.waitForFunction(()=>document.querySelector('#quickLinks').style.getPropertyValue('--quick-row'));
+  await touchPage.waitForSelector('#waterOpen');
   const touchBounds=await touchPage.locator('.quick').boundingBox(),footerBounds=await touchPage.locator('footer').boundingBox();
   assert(touchBounds.y+touchBounds.height<=footerBounds.y);console.log('PASS compact touch layout avoids footer overlap');
   await touch.close();

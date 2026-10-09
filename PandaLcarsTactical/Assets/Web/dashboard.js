@@ -49,7 +49,7 @@ function drawArtwork(){
   image.setAttribute("href","../tactical-reference.png");image.setAttribute("width","1536");image.setAttribute("height","1024");
   svg.append(image);host.prepend(svg);
   if (host.classList.contains("navigation")) {
-   for (const [y,color,title,subtitle] of [[281,"#ed789a","WEB","FIREFOX"],[476,"#a68be9","COMMUNICATION","CALENDAR"]]) {
+   for (const [y,color,title,subtitle] of [[281,"#ed789a","WEB","PANDAs"],[476,"#a68be9","COMMUNICATION","CALENDAR"]]) {
     const cover=document.createElementNS(svg.namespaceURI,"rect");
     for(const [k,v] of Object.entries({x:72,y:y-7,width:166,height:59,rx:5,fill:color})) cover.setAttribute(k,v);
     svg.append(cover);

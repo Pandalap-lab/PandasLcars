@@ -146,3 +146,6 @@ dialog{color:#acd5ff;background:#02080f;border:2px solid #748eec;border-radius:1
 .celestial-events b>span{display:inline-block}.celestial-events .time-hours,.celestial-events .time-minutes{width:2ch}.celestial-events .time-hours{text-align:right}.celestial-events .time-colon{width:.5ch;text-align:center}
 
 .celestial-caption{display:grid;grid-template-columns:12px 28px 8px;align-items:center}.event-arrow{text-align:center}@media(max-width:1100px){.celestial-caption{grid-template-columns:10px 24px 7px}}
+
+/* Original Hydro NÖ chart replaces the former Quick Launch panel. */
+.water-panel{min-width:0;overflow:hidden}.water-panel #waterOpen{flex:1;min-height:0;width:100%;padding:0;border:0;background:#fff;overflow:hidden;border-radius:0}.water-panel img{width:100%;height:100%;object-fit:contain;display:block;background:white}.water-panel img[hidden]{display:none}.water-panel small{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:12px}.saved-links{height:160px;display:flex;flex-direction:column;padding:6px}.saved-links h2{display:flex;justify-content:space-between}.saved-links #quickLinks{min-height:68px}

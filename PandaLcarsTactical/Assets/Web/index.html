@@ -2,13 +2,13 @@
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://tile.openstreetmap.org https://tilecache.rainviewer.com; worker-src 'self' blob:; object-src 'none'; frame-src 'none'">
 <title>PandasLcars</title><link rel="stylesheet" href="Cesium/Widgets/widgets.css"><link rel="stylesheet" href="dashboard.css">
-<script src="Cesium/Cesium.js" defer></script><script src="zoom.js" defer></script><script src="earth-motion.js" defer></script><script src="dashboard.js" defer></script><script src="satellite.min.js" defer></script><script src="iss.js" defer></script><script src="quicklaunch.js" defer></script><script src="settings.js" defer></script></head>
+<script src="Cesium/Cesium.js" defer></script><script src="zoom.js" defer></script><script src="earth-motion.js" defer></script><script src="dashboard.js" defer></script><script src="satellite.min.js" defer></script><script src="iss.js" defer></script><script src="quicklaunch.js" defer></script><script src="waterlevel.js" defer></script><script src="settings.js" defer></script></head>
 <body>
 <div id="updateNotice" role="status" hidden></div>
 <div class="dashboard">
 <header class="top"><div class="art" data-crop="0 0 1536 76"></div><div class="update-controls"><button id="updateCheck">UPDATES SUCHEN</button><button id="updateDownload" disabled title="77852 · Update laden">77852 · UPDATE LADEN</button></div><span id="updateStatus" role="status"></span><div class="clock"><span id="date"></span><strong id="clock"></strong></div></header>
 <aside class="navigation art" data-crop="16 81 225 643" aria-label="LCARS-Navigation">
-<div class="menu-buttons"><button data-action="tactical" aria-label="01 Tactical"></button><button data-action="system" aria-label="02 System – Windows Einstellungen"></button><button data-action="maps" aria-label="03 Navigation – Google Maps"></button><button data-action="web" aria-label="04 Web – Firefox öffnen"></button><button data-action="data" aria-label="05 Data – Datei-Explorer"></button><button data-action="photos" aria-label="06 Media – Google Fotos"></button><button data-action="calendar" aria-label="07 Communication – Calendar"></button><button data-action="desktop" aria-label="08 Programs – Desktop anzeigen"></button><button id="openAppSettings" aria-label="09 Settings – PandasLcars Einstellungen"></button><button data-action="power" aria-label="10 Power – Neustart oder Herunterfahren"></button></div></aside>
+<div class="menu-buttons"><button data-action="tactical" aria-label="01 Tactical"></button><button data-action="system" aria-label="02 System – Windows Einstellungen"></button><button data-action="maps" aria-label="03 Navigation – Google Maps"></button><button data-action="web" aria-label="04 Web – PANDAs-Kommandozentrale öffnen" title="PANDAs · Vollbild öffnen · mit Zurück zu LCARS schließen"></button><button data-action="data" aria-label="05 Data – Datei-Explorer"></button><button data-action="photos" aria-label="06 Media – Google Fotos"></button><button data-action="calendar" aria-label="07 Communication – Calendar"></button><button data-action="desktop" aria-label="08 Programs – Desktop anzeigen"></button><button id="openAppSettings" aria-label="09 Settings – PandasLcars Einstellungen"></button><button data-action="power" aria-label="10 Power – Neustart oder Herunterfahren"></button></div></aside>
 <main class="tactical panel">
  <div class="tactical-title"><div><h1>TACTICAL SITUATION</h1><span>GLOBAL VIEW &nbsp; // &nbsp; LIVE WEATHER &nbsp; // &nbsp; PANDA</span></div><div class="sector"><small>SECTOR EARTH</small><b id="sectorName">WIEN, ÖSTERREICH</b></div></div>
  <div class="map-wrap"><div id="globe" aria-label="Interaktive Weltkugel"></div>
@@ -61,9 +61,9 @@
   </div>
  </div>
  <section class="panel targets"><h2>TARGETS / DESTINATIONS</h2><form id="searchForm"><input id="search" type="search" placeholder="Ort suchen …" aria-label="Ort suchen" minlength="2" maxlength="100"><button type="submit" title="Ort suchen">⌕</button></form><small id="searchStatus" role="status">Ziel wählen · Entfernung ab Wien</small><div id="destinations"></div></section>
- </div><section class="quick panel" aria-label="Quicklaunch"><h2>QUICK LAUNCH <button id="manageLinks" title="Eigene Links bearbeiten oder löschen" aria-label="Eigene Links verwalten">⚙</button></h2><div id="quickLinks" aria-label="Webseiten, maximal acht gleichzeitig sichtbar" tabindex="0"></div><button id="addLink">+ WEITERE</button></section>
+ </div><section class="quick panel water-panel" aria-label="Donau Wasserstand Korneuburg"><h2>DONAU · KORNEUBURG <button id="waterRefresh" aria-label="Pegelgrafik aktualisieren">↻</button></h2><button id="waterOpen" title="Originalgrafik in Großansicht öffnen"><img id="waterImage" alt="Originalgrafik Hydro NÖ: Korneuburg, Wasserstand und Prognose" hidden></button><small id="waterStatus" role="status">Originalgrafik wird geladen …</small></section>
 </div>
-<footer><span>PandasLcars v0.6.6 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Dienste im Browser öffnen">DIENSTE · IM BROWSER ÖFFNEN</button></footer>
+<footer><span>PandasLcars v0.6.7 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Dienste im Browser öffnen">DIENSTE · IM BROWSER ÖFFNEN</button></footer>
 </div>
 <dialog id="linkDialog" aria-labelledby="linkDialogTitle"><form id="linkForm">
  <h2 id="linkDialogTitle">QUICK LAUNCH · LINK HINZUFÜGEN</h2>
@@ -75,7 +75,7 @@
 <dialog id="manageDialog" aria-labelledby="manageTitle"><h2 id="manageTitle">EIGENE LINKS</h2><div id="customLinks"></div><p id="manageError" role="alert"></p><button id="closeManage">SCHLIESSEN</button></dialog>
 <dialog id="appSettings" aria-labelledby="appSettingsTitle">
 <h2 id="appSettingsTitle">PandasLcars · SETTINGS</h2>
-<h3>START &amp; BILDSCHIRM</h3>
+<section class="saved-links panel" aria-label="Quicklaunch"><h2>QUICK LAUNCH <button id="manageLinks" title="Eigene Links bearbeiten oder löschen" aria-label="Eigene Links verwalten">⚙</button></h2><div id="quickLinks" aria-label="Webseiten, maximal acht gleichzeitig sichtbar" tabindex="0"></div><button id="addLink">+ WEITERE</button></section><h3>START &amp; BILDSCHIRM</h3>
 <label>Startbildschirm<select id="startMonitor"><option value="auto">Automatisch: Monitor 3</option></select></label>
 <label class="check-label"><input id="startFullscreen" type="checkbox" checked>Im Vollbild starten</label>
 <label class="check-label"><input id="startAutostart" type="checkbox">Mit Windows starten</label>

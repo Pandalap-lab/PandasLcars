@@ -26,6 +26,9 @@ public sealed partial class MainWindow : Window
     private readonly LinkStore links = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "quicklaunch.json"));
     private readonly SystemInfo.ActivityStatus activity = new();
     private TacticalBrowserView? tacticalBrowser;
+    private AppWindowPresenter? portalPreviousPresenter;
+    private WaterLevelView? waterLevel;
+    private readonly DispatcherTimer waterTimer = new() { Interval = TimeSpan.FromMinutes(10) };
     private double? lastCpu, lastGpu;
     private DateTimeOffset lastAppInput = DateTimeOffset.Now, lastSample = DateTimeOffset.MinValue;
     private readonly DispatcherTimer activityTimer = new() { Interval = TimeSpan.FromSeconds(1) };
@@ -66,6 +69,7 @@ public sealed partial class MainWindow : Window
         activityTimer.Start();
         provider = new OpenMeteoProvider(http);
         internetTimer.Tick += async (_, _) => await CheckInternetAsync();
+        waterTimer.Tick += async (_, _) => { if (internetConnected != false && waterLevel is not null) await waterLevel.RefreshAsync(); };
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1500, 980));
         displayTimer.Tick += (_, _) => { if (PlaceOnMonitor() || ++displayAttempts >= 30) displayTimer.Stop(); };
         awaitingMonitor = !PlaceOnMonitor();
@@ -73,6 +77,7 @@ public sealed partial class MainWindow : Window
         {
             closed = true; weatherRequest?.Cancel(); searchRequest?.Cancel();
             lifetime.Cancel(); internetTimer.Stop(); internetHttp.Dispose();
+            waterTimer.Stop(); waterLevel?.Dispose();
             activityTimer.Stop(); displayTimer.Stop(); tacticalBrowser?.Dispose();
             Dashboard.Close(); http.Dispose();
             _ = DisposeMonitorAsync();
@@ -85,6 +90,10 @@ public sealed partial class MainWindow : Window
         try
         {
             var profile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "WebView");
+            // Explicit opt-in for side-by-side development checks. Production
+            // retains its existing profile and user preferences across updates.
+            if (Environment.GetEnvironmentVariable("PANDAS_WEBVIEW_TEST_PROFILE") is { Length: > 0 } testProfile)
+                profile = Path.GetFullPath(testProfile);
             await Dashboard.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, null));
             if (closed) return;
             var core = Dashboard.CoreWebView2 ?? throw new IOException("Browserprofil ist noch belegt. Alle PandasLcars-Fenster schließen und erneut starten.");
@@ -161,6 +170,11 @@ public sealed partial class MainWindow : Window
             switch (messageType)
             {
                 case "connectivity": internetTimer.Start(); await CheckInternetAsync(); break;
+                case "waterLevel":
+                    if (waterLevel is null) { waterLevel = new WaterLevelView(); waterLevel.Updated += Send; Root.Children.Insert(0, waterLevel.View); }
+                    waterTimer.Start();
+                    if (internetConnected != false) await waterLevel.RefreshAsync();
+                    break;
                 case "displaySettings": SendDisplay(); break;
                 case "displaySave":
                     var monitorId = message.GetProperty("monitorId").GetString();
@@ -321,7 +335,8 @@ public sealed partial class MainWindow : Window
                 if(!await ExternalWindows.LaunchAsync("SystemSettings",async()=>{if(!await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:")))throw new IOException("Windows-Einstellungen konnten nicht geöffnet werden.");}))
                     Send(new {type="notice",message="Windows-Einstellungen geöffnet; Fensterposition bitte prüfen.",error=true});
                 break;
-            case "web": await OpenFirefoxAsync("about:home"); break;
+            case "web": await OpenTacticalAsync(new LaunchLink("pandas-home", "Kommandozentrale", "https://pandanuovo.com/", false), portal: true); break;
+            case "water": await OpenTacticalAsync(new LaunchLink("water", "Donau · Korneuburg · Hydro NÖ", WaterLevelView.Url, false)); break;
             case "maps":
                 var targetPlace = message.GetProperty("place").Deserialize<GeoPlace>(Json) ?? GeoPlace.Vienna;
                 targetPlace.Validate();
@@ -361,8 +376,8 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.6"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.6" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.7"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.7" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
         catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
         finally { updateBusy = false; }
@@ -415,11 +430,16 @@ public sealed partial class MainWindow : Window
         var fresh = now - lastSample < TimeSpan.FromSeconds(10);
         Send(new { type = "activity", data = activity.Update(now, idle, fresh ? lastCpu : null, fresh ? lastGpu : null) });
     }
-    private async Task OpenTacticalAsync(LaunchLink link)
+    private async Task OpenTacticalAsync(LaunchLink link, bool portal = false)
     {
         lastAppInput = DateTimeOffset.Now;
         CloseTactical();
-        var view = new TacticalBrowserView(new WebViewBrowser(), link.Name);
+        var view = new TacticalBrowserView(new WebViewBrowser(), link.Name, portal);
+        if (portal)
+        {
+            portalPreviousPresenter = AppWindow.Presenter;
+            AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+        }
         tacticalBrowser = view;
         view.CloseRequested += CloseTactical;
         Root.Children.Add(view);
@@ -431,6 +451,11 @@ public sealed partial class MainWindow : Window
         if (tacticalBrowser is null) return;
         var view = tacticalBrowser; tacticalBrowser = null;
         view.CloseRequested -= CloseTactical; view.Dispose(); Root.Children.Remove(view);
+        if (portalPreviousPresenter is { } previous)
+        {
+            portalPreviousPresenter = null;
+            AppWindow.SetPresenter(previous);
+        }
         Dashboard.Visibility = Visibility.Visible; Dashboard.Focus(FocusState.Programmatic);
     }
     private async Task DisposeMonitorAsync()

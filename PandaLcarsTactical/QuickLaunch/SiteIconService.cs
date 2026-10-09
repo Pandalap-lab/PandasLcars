@@ -17,7 +17,7 @@ public sealed class SiteIconService
     {
         directory = cacheDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "SiteIcons");
         http = new HttpClient(handler ?? new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false }) { Timeout = TimeSpan.FromSeconds(12) };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("PandasLcars/0.6.6 (+https://github.com/Pandalap-lab/PandasLcars)");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("PandasLcars/0.6.7 (+https://github.com/Pandalap-lab/PandasLcars)");
     }
     public static bool PublicAddress(IPAddress address)
     {
