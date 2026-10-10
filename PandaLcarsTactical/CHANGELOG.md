@@ -1,3 +1,7 @@
+# PandasLcars 0.6.12
+
+Transparente durchgehende Wolkenansicht, Zeitangaben rechts, kompakte Overlay-Kachel, Platz für SYSTEM STATUS, korrigierte Vorhersage und dynamischer Versionsvergleich. Siehe docs/release-0.6.12.md.
+
 # PandasLcars 0.6.11
 
 Eigene Saharastaub-/Blitz-Kachel mit Abrufzeiten; EUMETSAT-WMS-Zeitformat korrigiert. Siehe docs/release-0.6.11.md.

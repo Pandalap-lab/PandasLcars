@@ -117,7 +117,7 @@ const server=http.createServer((req,res)=>{
   assert.match(await page.locator('#lightningInfo').innerText(),/Ortszeit Wien[\s\S]*Daten:[\s\S]*Abruf: \d{2}:\d{2} · Nächster: \d{2}:\d{2}[\s\S]*Alle 5 Min\./);
   await page.evaluate(()=>testMessage({type:'lightningData',data:{from:'2000-01-01T00:00:00Z',to:'2000-01-01T00:10:00Z',points:[]}}));
   assert.equal(await page.evaluate(()=>viewer.scene.primitives.length),beforeLightning);
-  assert((await page.locator('#satelliteBadge').innerText()).includes('veraltet'));
+  assert((await page.locator('#satelliteStatus').innerText()).includes('veraltet'));
   await page.locator('#lightningToggle').click();
   await page.locator('#clouds').click();await page.waitForFunction(()=>testSent.some(x=>x.type==='cloudData'));
   await page.evaluate(()=>testMessage({type:'cloudData',error:'Wolkenbild nicht verfügbar'}));
@@ -277,6 +277,8 @@ const server=http.createServer((req,res)=>{
     const h=await page.locator('.map-wrap').evaluate(e=>e.getBoundingClientRect().height);await page.evaluate(()=>radarStatus('Radar test with a long status message',false));assert.equal(await page.locator('.map-wrap').evaluate(e=>e.getBoundingClientRect().height),h,'Radar status never shrinks map');for(const temp of ['18,8 °C','−28,8 °C','100,0 °C']){await page.locator('#temperature').evaluate((e,t)=>e.textContent=t,temp);assert(await page.evaluate(()=>document.querySelector('#temperature').getBoundingClientRect().right+4<document.querySelector('#weatherDetails').getBoundingClientRect().left),'Temperature unit clear of divider: '+temp);}await page.locator('#temperature').evaluate(e=>e.textContent='23 °C');
     assert(layout.sunLeft>=layout.weatherRight,'Sun/moon beside weather');assert(layout.scaleRight<layout.controlsLeft,'Altitude clear of controls');
    }
+   assert(await page.locator('.system-rows').evaluate(e=>e.scrollHeight<=e.clientHeight+1),'System metrics fit without scrolling');
+   assert(await page.locator('#forecastRows').evaluate(e=>e.getBoundingClientRect().bottom<=document.querySelector('#forecastStatus').getBoundingClientRect().top),'Forecast source never overlaps rows');
    if(width===1280)await page.screenshot({path:path.join(shot,'dashboard-1280.png')});
    assert(await page.locator('#waterOpen').isVisible());
    assert(await page.locator('#waterOpen').evaluate(el=>el.clientHeight>0));

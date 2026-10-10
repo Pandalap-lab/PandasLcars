@@ -392,8 +392,9 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.10"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.10" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            var currentVersion = typeof(MainWindow).Assembly.GetName().Version!;
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(currentVersion);
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · " + currentVersion.ToString(3) : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
         catch (IOException ex) { availableUpdate = null; Send(new { type = "update", state = "error", message = ex.Message }); }
         catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "Updateprüfung nicht erreichbar · später erneut versuchen" }); }
