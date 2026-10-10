@@ -1,3 +1,7 @@
+# PandasLcars 0.6.8
+
+Kompakte Browserleiste: eine Zeile, rund 36 Pixel Höhe, kleine Navigationstasten, sichtbare Adresse und direkte Rückkehr zu LCARS. Normale Statusmeldungen ohne zusätzliche Zeile; Fehlerhinweise bleiben sichtbar. Native Ansicht und Rückkehr geprüft. Details: docs/release-0.6.8.md.
+
 # PandasLcars 0.6.7
 
 Originale Hydro-NÖ-Pegelgrafik Donau/Korneuburg ersetzt Quick Launch; gespeicherte Links bleiben unter SETTINGS. Automatischer Abruf alle zehn Minuten, Fehlerstatus und anklickbare Originalquelle. Punkt 04 öffnet pandanuovo.com im Vollbild; Zurück zu LCARS stellt den vorherigen Fenstermodus wieder her. Siehe docs/release-0.6.7.md für Prüfungen und Grenzen.
