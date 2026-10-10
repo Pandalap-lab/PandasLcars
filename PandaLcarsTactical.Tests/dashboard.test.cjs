@@ -76,6 +76,8 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#humidityValue').innerText(),'31 %');
   assert.equal(await page.locator('#weatherDetails .weather-line').count(),2);
   assert((await page.locator('#celestialTimes').innerText()).includes('Stand 17:30'));
+  // Keep the historical layout fixture fresh during slower CI runs; stale behavior is tested separately.
+  await page.evaluate(()=>{report.current.validAt=new Date().toISOString();});
   assert(await page.evaluate(()=>networkSamples.length===60&&document.querySelector('#downloadLine').getAttribute('d').includes('L')));
   assert.equal(await page.locator('#mapHud').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
   await page.evaluate(()=>{renderNetwork(null,null);renderNetwork(4,1)});
