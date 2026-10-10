@@ -163,3 +163,15 @@ dialog{color:#acd5ff;background:#02080f;border:2px solid #748eec;border-radius:1
 
 #satelliteBadge{position:absolute;left:10px;top:100px;right:160px;z-index:3;pointer-events:none;color:#8cceff;font-size:10px;line-height:1.15;text-shadow:0 1px 2px #000;max-width:450px}
 #dustLegend{position:absolute;left:10px;bottom:53px;max-width:calc(100% - 170px);display:flex;flex-direction:column;gap:3px;padding:5px 8px;border-left:2px solid #ba874c;background:#080c10d9;font-size:10px;pointer-events:auto;z-index:3}#dustLegend b{font-weight:normal;color:#e7be88}#dustLegend a{color:#a9cfe6;font-size:9px}.dust-scale{background:linear-gradient(90deg,transparent,#a6703aab);color:#fff;white-space:pre;padding:2px 4px}#dustToggle[aria-pressed=true]{background:#ba874c;color:#100b04;border-color:#e6be89}
+/* Dedicated Saharastaub panel replaces the right-hand navigation instrument. */
+.dust-panel{display:flex;flex-direction:column}
+.dust-panel h2{flex-shrink:0}
+.dust-panel #dustLegend{position:static;max-width:none;min-height:0;overflow:auto;flex:1;display:flex;flex-direction:column;justify-content:center;gap:4px;margin:0 9px 5px;padding:0;border:0;background:transparent;font-size:10px}
+.dust-panel #dustLegend b{line-height:1.2}
+.dust-panel .dust-scale{display:flex;justify-content:space-between;gap:3px;white-space:nowrap;font-size:9px;padding:3px 2px}
+.dust-panel #dustLegend a{font-size:9px}
+/* Shared dust/lightning tile: timestamps stay outside the map. */
+.right{grid-template-rows:minmax(120px,1.3fr) minmax(158px,1fr) minmax(125px,1fr)}
+.dust-panel #dustLegend{flex:none;margin-bottom:5px;gap:3px;overflow:visible}
+#lightningInfo{border-top:1px solid #245776;margin:0 9px;padding:5px 0;white-space:pre-line;font-size:10px;line-height:1.3;overflow-wrap:anywhere}
+.dust-panel{overflow:auto}

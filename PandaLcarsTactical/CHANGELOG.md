@@ -1,3 +1,7 @@
+# PandasLcars 0.6.11
+
+Eigene Saharastaub-/Blitz-Kachel mit Abrufzeiten; EUMETSAT-WMS-Zeitformat korrigiert. Siehe docs/release-0.6.11.md.
+
 # PandasLcars 0.6.10
 
 EUMETSAT-Wolken und Blitze, GeoSphere-Saharastaub als Kartenoverlay, kleinere Targets und automatische Earth-Rückkehr beim Herauszoomen. Wetterebenen dauerhaft verfügbar; GitHub-Abrufpausen und Installationsbestätigung verbessert. Details und Grenzen: docs/release-0.6.10.md.

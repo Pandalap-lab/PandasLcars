@@ -65,17 +65,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
           Compress-Archive artifacts/app/* artifacts/PandasLcars-Windows-x64.zip
           Get-FileHash artifacts/PandasLcars-Setup.exe,artifacts/PandasLcars-Windows-x64.zip -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } | Set-Content artifacts/SHA256SUMS.txt
-      - name: Get 0.6.9 source for upgrade test
+      - name: Get 0.6.10 source for upgrade test
         uses: actions/checkout@v4
         with:
-          ref: v0.6.9
+          ref: v0.6.10
           path: upgrade-baseline
       - name: Build previous installer
         shell: pwsh
         run: |
           dotnet publish upgrade-baseline/PandaLcarsTactical/PandaLcarsTactical.csproj -c Release -p:Platform=x64 -o upgrade-baseline/artifacts/app
           if ($LASTEXITCODE -ne 0) { throw 'Baseline build failed' }
-          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" /DAppVersion=0.6.9 upgrade-baseline/installer/PandasLcars.iss
+          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" /DAppVersion=0.6.10 upgrade-baseline/installer/PandasLcars.iss
           if ($LASTEXITCODE -ne 0) { throw 'Baseline installer failed' }
       - name: Test installation, upgrade and uninstall on clean runner
         shell: pwsh
@@ -99,7 +99,7 @@ jobs:
           $baseline = (Resolve-Path upgrade-baseline/artifacts/PandasLcars-Setup.exe).Path
           $initial = Start-Process -FilePath $baseline -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -WindowStyle Hidden -Wait -PassThru
           if ($initial.ExitCode -ne 0) { throw 'Baseline install failed' }
-          if ((Get-Item (Join-Path $appDir 'PandasLcars.exe')).VersionInfo.FileVersion -ne '0.6.9.0') { throw 'Baseline version mismatch' }
+          if ((Get-Item (Join-Path $appDir 'PandasLcars.exe')).VersionInfo.FileVersion -ne '0.6.10.0') { throw 'Baseline version mismatch' }
           $setup = (Resolve-Path artifacts/PandasLcars-Setup.exe).Path
           foreach ($attempt in 1..2) {
             $process = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/TASKS=autostart' -WindowStyle Hidden -Wait -PassThru

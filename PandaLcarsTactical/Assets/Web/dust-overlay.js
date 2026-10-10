@@ -1,17 +1,18 @@
 "use strict";
 (()=>{
  const button=document.createElement('button');button.id='dustToggle';button.textContent='SAHARASTAUB';button.setAttribute('aria-pressed','false');$('lightningOpen').parentElement.before(button);
- const legend=document.createElement('div');legend.id='dustLegend';legend.hidden=true;legend.setAttribute('role','status');document.querySelector('.map-wrap').append(legend);
+ const panel=document.querySelector('.location');panel.classList.add('dust-panel');panel.querySelector('h2').textContent='SAHARASTAUB / BLITZE';panel.querySelector('.location-body').hidden=true;
+ const legend=document.createElement('div');legend.id='dustLegend';legend.setAttribute('role','status');panel.querySelector('h2').after(legend);
  const details=document.createElement('div');details.id='dustStatus';$('radarStatus').after(details);
  let wanted=false,frame=null,layer=null,pending=false,next=0,revision=0,error='',drawing=false;
  const stamp=t=>new Date(t).toLocaleString('de-AT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
  const stale=()=>!frame||Date.now()-Date.parse(frame.time)>2*3600000||Date.now()-Date.parse(frame.run)>48*3600000;
  function clear(){revision++;drawing=false;if(layer&&viewer){viewer.imageryLayers.remove(layer,true);layer=null;viewer.scene.requestRender();}}
  function labels(){
-  legend.hidden=!wanted;details.hidden=!wanted;
-  const text=error||(!frame?'Saharastaub wird geladen …':stale()?'Saharastaub veraltet · ausgeblendet':'Prognose '+stamp(frame.time)+' · Modell '+stamp(frame.run));
-  legend.replaceChildren();const title=document.createElement('b');title.textContent='SAHARASTAUB · '+text;legend.append(title);
-  if(frame&&!stale()){const scale=document.createElement('span');scale.className='dust-scale';scale.textContent='0      100      500      ≥ 1.000 mg/m²';legend.append(scale);}
+  details.hidden=!wanted;
+  const text=!wanted?'Kartenebene ausgeschaltet':error||(!frame?'Saharastaub wird geladen …':stale()?'Saharastaub veraltet · ausgeblendet':'Prognose '+stamp(frame.time)+' · Modell '+stamp(frame.run));
+  legend.replaceChildren();const title=document.createElement('b');title.textContent=text;legend.append(title);
+  if(wanted&&frame&&!stale()){const scale=document.createElement('span');scale.className='dust-scale';for(const label of ['0','100','500','≥ 1.000 mg/m²']){const tick=document.createElement('span');tick.textContent=label;scale.append(tick);}legend.append(scale);}
   const source=document.createElement('a');source.href='https://doi.org/10.60669/metr-z617';source.target='_blank';source.rel='noopener';source.textContent='GeoSphere Austria · CC BY 4.0 · Luftsäule';legend.append(source);
   details.textContent='Saharastaub · '+text+' · Staubmenge in der gesamten Luftsäule (mg/m²), keine bodennahe Feinstaubmessung. Abdeckung: Europa/Nordafrika (20–64°N, 20°W–40°E). GeoSphere Austria · CC BY 4.0.';
  }
@@ -45,5 +46,5 @@
  window.chrome?.webview?.addEventListener('message',e=>{const m=e.data;if(m.type!=='dustData')return;pending=false;error=m.error||'';
   if(m.data){clear();frame=m.data;next=Date.now()+300000;}tick();
  });
- setInterval(()=>{if(pending&&Date.now()>=next)pending=false;tick();},1000);
+ labels();setInterval(()=>{if(pending&&Date.now()>=next)pending=false;tick();},1000);
 })();

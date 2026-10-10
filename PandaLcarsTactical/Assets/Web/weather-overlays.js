@@ -4,15 +4,21 @@
  $("lightningOpen").before(button);
  const status=document.createElement("div");status.id="satelliteStatus";status.setAttribute("role","status");$("radarStatus").after(status);
  const badge=document.createElement("div");badge.id="satelliteBadge";document.querySelector(".map-wrap").append(badge);
+ const lightningInfo=document.createElement("div");lightningInfo.id="lightningInfo";document.querySelector('.location').append(lightningInfo);
+ const localTime=t=>new Date(t).toLocaleTimeString('de-AT',{timeZone:'Europe/Vienna',hour:'2-digit',minute:'2-digit'});
+ let received=null;
  let wanted=false,points=null,frame=null,pending=false,next=0,error="";
  let cloud=null,cloudFrame=null,cloudPending=false,cloudNext=0,cloudError="",cloudTime=null;
- const stamp=t=>new Date(t).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+ const stamp=t=>new Date(t).toLocaleString("de-AT",{timeZone:"Europe/Vienna",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
  const stale=(t,minutes)=>!t||Date.now()-new Date(t).getTime()>minutes*60000;
  const earth=()=>typeof viewer!=="undefined"&&viewer&&earthMotion.earth;
  function clearPoints(){if(points&&viewer){viewer.scene.primitives.remove(points);points=null;viewer.scene.requestRender();}}
  function clearCloud(){if(cloud&&viewer){viewer.imageryLayers.remove(cloud,true);cloud=null;viewer.scene.requestRender();}}
  function labels(){
   const lines=[];
+  const period=frame?stamp(frame.from)+'–'+localTime(frame.to):'noch keine Daten';
+  const update=!wanted?'ausgeschaltet':!earth()?'pausiert · nur Earth':window.pandaInternetOnline===false?'pausiert · offline':document.hidden?'pausiert · Fenster inaktiv':pending?'Abruf läuft …':next>Date.now()?localTime(next):'steht an';
+  lightningInfo.textContent='BLITZE · EUMETSAT · Ortszeit Wien\nDaten: '+period+'\nAbruf: '+(received?localTime(received):'—')+' · Nächster: '+update+'\nAlle 5 Min.'+(error?' · '+error:frame&&stale(frame.to,30)?' · Daten veraltet':frame?' · '+frame.points.length.toLocaleString('de-AT')+' Ereignisse':'');
   if(wanted)lines.push(!earth()?"Blitze · nur in Earth-Ansicht":error||(!frame?"Blitze werden geladen …":stale(frame.to,30)?"Blitzdaten veraltet · ausgeblendet":"Blitze · "+stamp(frame.from)+"–"+new Date(frame.to).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit"})+" · "+frame.points.length+" Satellitenblitze"+(frame.qualityWarning?" · Qualitätswarnung":"")));
   if(selections.clouds)lines.push(cloudError||(!cloudFrame?"Wolken werden geladen …":stale(cloudFrame.time,90)?"Wolkenbild veraltet · ausgeblendet":"Wolkenmaske · "+stamp(cloudFrame.time)+" · Europa/Afrika"));
   status.textContent=lines.length?lines.join(" | ")+" · EUMETSAT":"";status.hidden=!lines.length||!weatherEnabled;badge.textContent=(window.pandaInternetOnline===false?"OFFLINE · ":"")+lines.join(" | ");badge.hidden=status.hidden;
@@ -28,7 +34,9 @@
  function showCloud(data){
   if(!viewer||!weatherEnabled||!selections.clouds||stale(data.time,90))return;
   if(cloud&&cloudTime===data.time)return;clearCloud();cloudTime=data.time;
-  const provider=new Cesium.WebMapServiceImageryProvider({url:"https://view.eumetsat.int/geoserver/wms",layers:"msg_fes:clm",parameters:{transparent:true,format:"image/png",version:"1.1.1",time:data.time},tilingScheme:new Cesium.GeographicTilingScheme(),rectangle:Cesium.Rectangle.fromDegrees(-77,-77,77,77),maximumLevel:6,enablePickFeatures:false,credit:"Wolkenmaske © EUMETSAT"});
+  // The WMS requires UTC Z notation; DateTimeOffset from the host uses +00:00.
+  const wmsTime=new Date(data.time).toISOString().replace('.000Z','Z');
+  const provider=new Cesium.WebMapServiceImageryProvider({url:"https://view.eumetsat.int/geoserver/wms",layers:"msg_fes:clm",parameters:{transparent:true,format:"image/png",version:"1.1.1",time:wmsTime},tilingScheme:new Cesium.GeographicTilingScheme(),rectangle:Cesium.Rectangle.fromDegrees(-77,-77,77,77),maximumLevel:6,enablePickFeatures:false,credit:"Wolkenmaske © EUMETSAT"});
   const request=provider.requestImage.bind(provider);
   provider.requestImage=(x,y,level,r)=>{
    const result=request(x,y,level,r);if(!result)return result;
@@ -58,7 +66,7 @@
  $("eumetsatSettings").onclick=()=>{$("appSettings").close();send("eumetsatSettings");};
  window.chrome?.webview?.addEventListener("message",e=>{
   const m=e.data;
-  if(m.type==="lightningData"){pending=false;error=m.error||"";if(m.data){frame=m.data;draw();}}
+  if(m.type==="lightningData"){pending=false;error=m.error||"";if(m.data){frame=m.data;received=Date.now();draw();}}
   if(m.type==="cloudData"){cloudPending=false;cloudError=m.error||"";if(m.data){cloudFrame=m.data;showCloud(m.data);}}
   if(m.type==="lightningReset"){frame=null;clearPoints();pending=false;next=0;error="";}
   tick();
@@ -67,5 +75,3 @@
  // Recover from a lost host response without flooding the API.
  setInterval(()=>{pending=false;cloudPending=false;},120000);
 })();
-
-

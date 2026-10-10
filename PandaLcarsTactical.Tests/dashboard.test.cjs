@@ -99,11 +99,22 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>beginSmoothZoom(2200000));await page.waitForFunction(()=>zoomTarget===null);assert.equal(await page.evaluate(()=>earthMotion.earth),false);
    await page.evaluate(()=>beginSmoothZoom(3000000));await page.waitForFunction(()=>zoomTarget===null);assert.equal(await page.evaluate(()=>earthMotion.earth),true);
   }
+  assert.equal(await page.locator('.location h2').innerText(),'SAHARASTAUB / BLITZE');
+  assert.equal(await page.locator('.map-wrap #dustLegend').count(),0);
+  assert(await page.locator('.location #dustLegend').isVisible());
+  assert((await page.locator('#dustLegend').innerText()).includes('ausgeschaltet'));
+  await page.locator('#dustToggle').click();
+  await page.evaluate(()=>testMessage({type:'dustData',data:{time:new Date().toISOString(),run:new Date().toISOString(),width:2,height:2,west:10,south:40,east:20,north:50,values:[0,100,500,1000]}}));
+  assert((await page.locator('#dustLegend').innerText()).includes('mg/m²'));
+  assert(await page.locator('.location').evaluate(e=>{const p=e.getBoundingClientRect(),l=e.querySelector('#dustLegend').getBoundingClientRect();return l.top>=p.top&&l.bottom<=p.bottom&&l.right<=p.right;}));
+  await page.locator('#dustToggle').click();
+  console.log('PASS dedicated Saharastaub panel, scale containment and disabled status');
   await page.locator('#lightningToggle').click();
   await page.waitForFunction(()=>testSent.some(x=>x.type==='lightningData'));
   const beforeLightning=await page.evaluate(()=>viewer.scene.primitives.length);
   await page.evaluate(()=>testMessage({type:'lightningData',data:{from:new Date(Date.now()-600000).toISOString(),to:new Date().toISOString(),qualityWarning:false,points:[{latitude:48.2,longitude:16.3,confidence:.9,time:new Date().toISOString()}]}}));
   assert.equal(await page.evaluate(()=>viewer.scene.primitives.length),beforeLightning+1);
+  assert.match(await page.locator('#lightningInfo').innerText(),/Ortszeit Wien[\s\S]*Daten:[\s\S]*Abruf: \d{2}:\d{2} · Nächster: \d{2}:\d{2}[\s\S]*Alle 5 Min\./);
   await page.evaluate(()=>testMessage({type:'lightningData',data:{from:'2000-01-01T00:00:00Z',to:'2000-01-01T00:10:00Z',points:[]}}));
   assert.equal(await page.evaluate(()=>viewer.scene.primitives.length),beforeLightning);
   assert((await page.locator('#satelliteBadge').innerText()).includes('veraltet'));
