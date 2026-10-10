@@ -154,6 +154,18 @@ finally { Directory.Delete(testFolder,true); }
  transport.Online=false;Check(!(await probe.CheckAsync(CancellationToken.None)).Connected,"Loss of Internet is detected with adapter still up");
  using var probeCancel=new CancellationTokenSource();probeCancel.Cancel();bool cancelled=false;try{await probe.CheckAsync(probeCancel.Token);}catch(OperationCanceledException){cancelled=true;}Check(cancelled,"Shutdown cancels connectivity checks");
 }
+{
+ var updateFolder=Path.Combine(Path.GetTempPath(),"Panda-update-test-"+Guid.NewGuid());
+ try {
+  var handler=new UpdateFixtureHandler();using var updateHttp=new HttpClient(handler);
+  var updater=new PandaLcarsTactical.Updates.UpdateClient(updateHttp,updateFolder);
+  var release=new PandaLcarsTactical.Updates.UpdateRelease("v1.0.0","https://fixture.test/setup","https://fixture.test/sums");
+  var file=await updater.DownloadAsync(release);await updater.DownloadAsync(release);
+  Check(handler.Downloads==1,"Verified installer is reused on second attempt");
+  await File.WriteAllTextAsync(file,"corrupted");await updater.DownloadAsync(release);
+  Check(handler.Downloads==2,"Changed installer is downloaded again instead of trusted");
+ } finally {if(Directory.Exists(updateFolder))Directory.Delete(updateFolder,true);}
+}
 Console.WriteLine("All weather, radar, system, quicklaunch and activity tests passed.");
 sealed class FixtureHandler(string data):HttpMessageHandler {
  protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){token.ThrowIfCancellationRequested();return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(data)});}
@@ -173,5 +185,14 @@ sealed class InternetFixtureHandler:HttpMessageHandler {
  token.ThrowIfCancellationRequested();Calls++;bool primary=request.RequestUri!.Host=="www.msftconnecttest.com";
  var body=Online&&(!primary||!PrimaryBlocked)?primary?"Microsoft Connect Test":"{\"radar\":{\"past\":[]}}":"<html>Sign in to Wi-Fi</html>";
  return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(body)});
+ }
+}
+
+sealed class UpdateFixtureHandler:HttpMessageHandler {
+ public int Downloads;
+ protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){
+  var bytes=System.Text.Encoding.UTF8.GetBytes("test installer only");
+  if(request.RequestUri!.AbsolutePath=="/sums")return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes))+"  PandasLcars-Setup.exe")});
+  Downloads++;return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new ByteArrayContent(bytes)});
  }
 }

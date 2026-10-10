@@ -9,7 +9,12 @@ public sealed class UpdateClient
 {
     private const string Repository = "https://github.com/Pandalap-lab/PandasLcars/releases/download/";
     private readonly HttpClient http;
-    public UpdateClient(HttpClient http) => this.http = http;
+    private readonly string updatesDirectory;
+    public UpdateClient(HttpClient http, string? updatesDirectory = null)
+    {
+        this.http = http;
+        this.updatesDirectory = updatesDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "Updates");
+    }
     public static UpdateRelease? Parse(string json, Version current)
     {
         using var document = JsonDocument.Parse(json);
@@ -40,10 +45,17 @@ public sealed class UpdateClient
         var sums = await http.GetStringAsync(release.Checksums);
         var line = sums.Split('\n').Select(l => l.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries))
             .Single(l => l.Length == 2 && l[1].TrimStart('*') == "PandasLcars-Setup.exe");
-        var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PandaLcarsTactical", "Updates", release.Tag);
+        var directory = Path.Combine(updatesDirectory, release.Tag);
         Directory.CreateDirectory(directory);
         var target = Path.Combine(directory, "PandasLcars-Setup.exe");
         var partial = target + ".partial";
+        // Reuse only a file matching the freshly retrieved release checksum.
+        // Retrying installation must not trigger a new download/security scan.
+        if (File.Exists(target))
+        {
+            await using var cached = File.OpenRead(target);
+            if (Verify(line[0], await SHA256.HashDataAsync(cached))) return target;
+        }
         try
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(10));
@@ -65,6 +77,12 @@ public sealed class UpdateClient
             File.Move(partial, target, true);
             return target;
         }
-        finally { if (File.Exists(partial)) File.Delete(partial); }
+        finally
+        {
+            // Cleanup must not mask the original security/download failure.
+            try { if (File.Exists(partial)) File.Delete(partial); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
     }
 }

@@ -376,8 +376,8 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.8"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.8" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.9"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.9" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
         catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
         finally { updateBusy = false; }
@@ -396,7 +396,10 @@ public sealed partial class MainWindow : Window
                 Send(new { type = "update", state = "starting", message = "Installer wird gestartet – die Sicherheitsprüfung kann einen Moment dauern. Bitte warten." });
                 var exitCode = await Task.Run(async () =>
                 {
-                    using var setup = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installer) { UseShellExecute = true });
+                    var log = Path.Combine(Path.GetDirectoryName(installer)!, "installation.log");
+                    var start = new System.Diagnostics.ProcessStartInfo(installer) { UseShellExecute = true };
+                    start.ArgumentList.Add("/LOG=" + log);
+                    using var setup = System.Diagnostics.Process.Start(start);
                     if (setup is null) throw new IOException("Installer konnte nicht gestartet werden.");
                     await setup.WaitForExitAsync();
                     return setup.ExitCode;

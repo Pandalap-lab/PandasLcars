@@ -1,3 +1,7 @@
+# PandasLcars 0.6.9
+
+Detailliertes transparentes Tactical-Target und NASA-Nachtkacheln beim Zoomen. Geprüfte Update-Downloads werden wiederverwendet; Installationsprotokoll ergänzt. Nachtauflösung und Norton-Abnahme bleiben ausdrücklich begrenzt/offen. Details: docs/release-0.6.9.md.
+
 # PandasLcars 0.6.8
 
 Kompakte Browserleiste: eine Zeile, rund 36 Pixel Höhe, kleine Navigationstasten, sichtbare Adresse und direkte Rückkehr zu LCARS. Normale Statusmeldungen ohne zusätzliche Zeile; Fehlerhinweise bleiben sichtbar. Native Ansicht und Rückkehr geprüft. Details: docs/release-0.6.8.md.

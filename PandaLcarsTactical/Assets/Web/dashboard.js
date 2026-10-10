@@ -2,7 +2,7 @@
 const $ = id => document.getElementById(id);
 const vienna = {name:"Wien",latitude:48.2082,longitude:16.3738,country:"Österreich",region:""};
 const earthMotion=new PandaEarthMotion();
-let nightLayer;
+let nightLayer, nightDetailLayer;
 let place={...vienna}, report=null, weatherEnabled=true, tracking=false, viewer, target, osm, pendingWeather=null, pendingSearch=null, generation=0, forecastTimer;
 let internetOnline=null, searchNeedsRetry=false;
 window.pandaInternetOnline=null;
@@ -128,7 +128,14 @@ function renderGlobeWeather(){
   if(selections.rain)lines.push("Regen "+f(w.precipitationMm)+" mm");
  }
  $("hudWeather").textContent=weatherEnabled?(report?lines.slice(1).join(" · ")||"Keine Wetterebene ausgewählt":"Wetterdaten ausstehend"):"Wetter-Layer OFF";
- if(target){$("cityLabel").textContent=place.name;viewer.scene.requestRender();}
+ if(target){updateTargetLabel();viewer.scene.requestRender();}
+}
+function updateTargetLabel(){
+ const label=$("cityLabel");if(!label)return;
+ label.replaceChildren();
+ for(const text of [place.name.toUpperCase(),Math.abs(place.latitude).toFixed(4)+"° "+(place.latitude<0?"S":"N"),Math.abs(place.longitude).toFixed(4)+"° "+(place.longitude<0?"W":"E")]){
+  const line=document.createElement("span");line.textContent=text;label.append(line);
+ }
 }
 function syncSwitches(){
  pressed("weatherOn",weatherEnabled);pressed("weatherOff",!weatherEnabled);
@@ -251,6 +258,7 @@ async function initializeGlobe(){
    const night=await Cesium.SingleTileImageryProvider.fromUrl("earth-night.jpg",{rectangle:Cesium.Rectangle.MAX_VALUE,credit:"NASA Earth Observatory · Black Marble 2016 (kein Livebild)"});
    nightLayer=viewer.imageryLayers.addImageryProvider(night);nightLayer.dayAlpha=0;nightLayer.nightAlpha=1;
   }catch{eventFeed("Nachtkarte nicht verfügbar; Tag-/Nachtbeleuchtung bleibt aktiv.",true);}
+  createNightDetail();
   createDetailMap(0);
   viewer.camera.percentageChanged=.02;
   viewer.camera.changed.addEventListener(()=>{
@@ -262,25 +270,43 @@ async function initializeGlobe(){
   });
   target=viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude),
    viewFrom:new Cesium.Cartesian3(0,-150000,180000)});
-  const targetIcon=document.createElement("img");targetIcon.id="targetIcon";targetIcon.className="map-symbol";targetIcon.src="target-reticle.png";targetIcon.alt="Tactical-Ziel";targetIcon.width=40;targetIcon.height=40;document.querySelector(".map-wrap").append(targetIcon);
+  const targetIcon=document.createElement("img");targetIcon.id="targetIcon";targetIcon.className="map-symbol";targetIcon.src="target-reticle.png";targetIcon.alt="Tactical-Ziel";targetIcon.width=112;targetIcon.height=112;document.querySelector(".map-wrap").append(targetIcon);
   const cityLabel=document.createElement("div");cityLabel.id="cityLabel";cityLabel.className="city-label";cityLabel.textContent=place.name;document.querySelector(".map-wrap").append(cityLabel);
   viewer.scene.postRender.addEventListener(()=>{
    const position=target.position.getValue(viewer.clock.currentTime);
    const pixel=Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene,position);
-   const visible=pixel&&new Cesium.EllipsoidalOccluder(viewer.scene.globe.ellipsoid,viewer.camera.positionWC).isPointVisible(position);
+   const visible=pixel&&pixel.x>=0&&pixel.y>=0&&pixel.x<=viewer.scene.canvas.clientWidth&&pixel.y<=viewer.scene.canvas.clientHeight&&new Cesium.EllipsoidalOccluder(viewer.scene.globe.ellipsoid,viewer.camera.positionWC).isPointVisible(position);
    cityLabel.hidden=!visible;targetIcon.hidden=!visible;
-   if(visible){targetIcon.style.left=Math.round(pixel.x-20)+"px";targetIcon.style.top=Math.round(pixel.y-20)+"px";}
-   if(visible){cityLabel.style.left=Math.round(pixel.x+43)+"px";cityLabel.style.top=Math.round(pixel.y-28)+"px";}
+   if(visible){
+    const size=targetIcon.getBoundingClientRect().width;
+    targetIcon.style.left=Math.round(pixel.x-size/2)+"px";targetIcon.style.top=Math.round(pixel.y-size/2)+"px";
+    const leftSide=pixel.x+size/2+cityLabel.offsetWidth+155>viewer.scene.canvas.clientWidth;
+    cityLabel.classList.toggle("label-left",leftSide);
+    cityLabel.style.left=Math.round(leftSide?pixel.x-size/2-18-cityLabel.offsetWidth:pixel.x+size/2+18)+"px";
+    cityLabel.style.top=Math.round(Math.max(8,Math.min(pixel.y+8,viewer.scene.canvas.clientHeight-cityLabel.offsetHeight-28)))+"px";
+   }
   });
   viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude,globalHeight())});
   setEarthMode(true);startEarthMotion();renderGlobeWeather();eventFeed("3D-Globus bereit. CENTER zeigt Österreich / Wien.");
   new ResizeObserver(()=>{viewer.resize();viewer.scene.requestRender();}).observe($("globe"));
  }catch(error){$("mapError").hidden=false;eventFeed("3D-Karte konnte nicht gestartet werden.",true);}
 }
+function createNightDetail(){
+ const index=nightDetailLayer?viewer.imageryLayers.indexOf(nightDetailLayer):viewer.imageryLayers.length;
+ if(nightDetailLayer)viewer.imageryLayers.remove(nightDetailLayer,true);
+ // NASA's published tile matrix ends at level 8. Do not invent extra detail.
+ const provider=new Cesium.UrlTemplateImageryProvider({
+  url:"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png",
+  maximumLevel:8,credit:"NASA GIBS / ESDIS · Black Marble 2016 · Satellitenkomposit, kein Livebild"});
+ nightDetailLayer=viewer.imageryLayers.addImageryProvider(provider,index);
+ nightDetailLayer.dayAlpha=0;nightDetailLayer.nightAlpha=1;nightDetailLayer.show=earthMotion.earth;
+ let noted=false;provider.errorEvent.addEventListener(()=>{if(!noted){noted=true;eventFeed("NASA-Nachtdetails nicht erreichbar; lokale Nachtkarte bleibt als Ersatz verfügbar.",true);}});
+}
 function createDetailMap(alpha){
  const index=osm?viewer.imageryLayers.indexOf(osm):viewer.imageryLayers.length;
  if(osm)viewer.imageryLayers.remove(osm,true);
  osm=viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({url:"https://tile.openstreetmap.org/",maximumLevel:19,credit:"© OpenStreetMap contributors"}),index);osm.alpha=alpha;
+ osm.nightAlpha=earthMotion.earth?0:1;
  let noted=false;osm.imageryProvider.errorEvent.addEventListener(()=>{if(!noted){noted=true;eventFeed("Detailkarten nicht erreichbar; Weltkarte bleibt verfügbar.",true);}});
 }
 function applyInternetStatus(msg){
@@ -298,7 +324,7 @@ function applyInternetStatus(msg){
  }
  eventFeed("Internet verbunden · Online-Daten werden nachgeladen.");
  send("cancelWeather");pendingWeather=null;loadWeather();
- if(viewer&&osm){createDetailMap(osm.alpha);viewer.scene.requestRender();}
+ if(viewer&&osm){createNightDetail();createDetailMap(osm.alpha);viewer.scene.requestRender();}
  pendingRadar=null;lastRadarRequest=0;syncRadar();
  if(searchNeedsRetry){const query=$("search").value.trim();if(query.length>=2){pendingSearch="search-"+(++generation);send("search",{id:pendingSearch,query});}searchNeedsRetry=false;}
  window.dispatchEvent(new Event("panda-internet-restored"));send("updateCheck");
@@ -307,6 +333,8 @@ function applyEarthLighting(){
  if(!viewer)return;
  viewer.scene.globe.enableLighting=earthMotion.earth;
  if(nightLayer){nightLayer.show=earthMotion.earth;nightLayer.dayAlpha=0;nightLayer.nightAlpha=1;}
+ if(nightDetailLayer){nightDetailLayer.show=earthMotion.earth;nightDetailLayer.dayAlpha=0;nightDetailLayer.nightAlpha=1;}
+ if(osm)osm.nightAlpha=earthMotion.earth?0:1;
  if(radarLayer){radarLayer.dayAlpha=1;radarLayer.nightAlpha=1;}
  viewer.scene.requestRender();
 }
