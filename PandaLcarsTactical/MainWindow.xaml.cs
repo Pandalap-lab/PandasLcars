@@ -41,6 +41,9 @@ public sealed partial class MainWindow : Window
     private bool updateBusy;
     private readonly SiteIconService siteIcons = new();
     private IssOrbitService? issOrbit;
+    private readonly Lightning.EumetsatKeyStore eumetsatKeys = new();
+    private Lightning.EumetsatClient? lightningClient;
+    private Lightning.CloudService? cloudService;
     private readonly DispatcherTimer internetTimer = new() { Interval = TimeSpan.FromSeconds(10) };
     private readonly CancellationTokenSource lifetime = new();
     private readonly HttpClient internetHttp = new(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
@@ -183,6 +186,19 @@ public sealed partial class MainWindow : Window
                     display.Save(monitorId == "auto" ? null : monitorId, message.GetProperty("fullscreen").GetBoolean());
                     displayTimer.Stop(); PlaceOnMonitor(); SendDisplay(); break;
                 case "menu": await OpenMenuAsync(message.GetProperty("action").GetString() ?? "", message); break;
+                case "eumetsatSettings": await ShowEumetsatAsync(); break;
+                case "lightningData":
+                    try { var frame = await (lightningClient ??= new Lightning.EumetsatClient(eumetsatKeys.Read)).GetAsync(lifetime.Token); Send(new { type = "lightningData", data = frame }); }
+                    catch (Exception ex) when (ex is not OutOfMemoryException) { Send(new { type = "lightningData", error = ex is InvalidOperationException ? "EUMETSAT-Zugang unter SETTINGS einrichten." : "Blitzabruf fehlgeschlagen. Zugang oder Verbindung prüfen; erneuter Versuch folgt." }); }
+                    break;
+                case "dustData":
+                    try { Send(new { type = "dustData", data = await (dustService ??= new Lightning.GeoSphereDustService(http)).GetAsync(lifetime.Token) }); }
+                    catch { Send(new { type = "dustData", error = "Saharastaub nicht verfügbar; erneuter Versuch folgt." }); }
+                    break;
+                case "cloudData":
+                    try { Send(new { type = "cloudData", data = await (cloudService ??= new Lightning.CloudService(http)).GetAsync(lifetime.Token) }); }
+                    catch { Send(new { type = "cloudData", error = "Wolkenbild nicht verfügbar; erneuter Versuch folgt." }); }
+                    break;
                 case "issOrbit":
                     try { Send(new { type = "issOrbit", data = await (issOrbit ??= new IssOrbitService(http)).GetAsync() }); }
                     catch { Send(new { type = "issOrbit", error = "Bahndaten nicht verfügbar" }); }
@@ -376,10 +392,11 @@ public sealed partial class MainWindow : Window
         updateBusy = true; Send(new { type = "update", state = "checking", message = "UPDATES SUCHEN …" });
         try
         {
-            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.9"));
-            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.9" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
+            availableUpdate = await new Updates.UpdateClient(http).CheckAsync(new Version("0.6.10"));
+            Send(new { type = "update", state = availableUpdate is null ? "current" : "available", message = availableUpdate is null ? "AKTUELL · 0.6.10" : "UPDATE " + availableUpdate.Tag + " VORHANDEN" });
         }
-        catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "UPDATEPRÜFUNG FEHLGESCHLAGEN" }); }
+        catch (IOException ex) { availableUpdate = null; Send(new { type = "update", state = "error", message = ex.Message }); }
+        catch { availableUpdate = null; Send(new { type = "update", state = "error", message = "Updateprüfung nicht erreichbar · später erneut versuchen" }); }
         finally { updateBusy = false; }
     }
     private async Task DownloadUpdateAsync()
@@ -405,11 +422,21 @@ public sealed partial class MainWindow : Window
                     return setup.ExitCode;
                 });
                 if (exitCode != 0) throw new IOException("Setup abgebrochen (Exitcode " + exitCode + ").");
+                // A security wrapper may exit before the installer. Keep the app
+                // available, and never start a second installer automatically.
+                var expected = Version.Parse(availableUpdate.Tag.TrimStart('v'));
+                var candidates = new[] { Path.Combine(AppContext.BaseDirectory, "PandasLcars.exe"), Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "PandasLcars", "PandasLcars.exe") };
+                bool Installed() => candidates.Any(path => File.Exists(path) && Version.TryParse(System.Diagnostics.FileVersionInfo.GetVersionInfo(path).FileVersion, out var version) && version >= expected);
+                for (int i = 0; i < 150 && !Installed(); i++) {
+                    Send(new { type = "update", state = "starting", message = "Warte auf Installation/Sicherheitsprüfung · Setup nicht nochmals starten" });
+                    await Task.Delay(2000, lifetime.Token);
+                }
+                if (!Installed()) throw new IOException("Installation noch nicht bestätigt.");
                 Close();
             }
             else Send(new { type = "update", state = "available", message = "UPDATE BEREIT · SPÄTER INSTALLIEREN" });
         }
-        catch { Send(new { type = "update", state = "available", message = "Setup nicht abgeschlossen. Bei Fehler 5: Zugriff verweigert – Sicherheitsprüfung abwarten und Norton-Verlauf prüfen. Danach erneut versuchen; gegebenenfalls das geprüfte Setup manuell als Administrator starten. Schutz bleibt eingeschaltet." }); }
+        catch { Send(new { type = "update", state = "available", message = "Installation nicht bestätigt. Bei Zugriff verweigert: Sicherheitsprüfung abwarten und Norton-Verlauf prüfen. Kein zweites Setup starten, solange eines geöffnet ist. Das geprüfte Paket bleibt gespeichert." }); }
         finally { updateBusy = false; }
     }
     private async Task RefreshSystemAsync()
@@ -465,6 +492,20 @@ public sealed partial class MainWindow : Window
     {
         await monitorLock.WaitAsync();
         try { systemMonitor.Dispose(); } finally { monitorLock.Release(); }
+    }
+    private Lightning.GeoSphereDustService? dustService;
+    private async Task ShowEumetsatAsync()
+    {
+        if (settingsOpen) return; settingsOpen = true;
+        var key = new PasswordBox { Header = "Consumer Key" };
+        var secret = new PasswordBox { Header = "Consumer Secret" };
+        var status = new TextBlock { Text = "Nur für dieses Windows-Konto verschlüsselt gespeichert. Schlüssel bleiben außerhalb der Kartenansicht.", TextWrapping = TextWrapping.Wrap };
+        var panel = new StackPanel { Spacing = 12, Width = 440 };
+        panel.Children.Add(status); panel.Children.Add(key); panel.Children.Add(secret);
+        var dialog = new ContentDialog { XamlRoot = Root.XamlRoot, Title = "EUMETSAT · Blitze", Content = panel, PrimaryButtonText = "Speichern", SecondaryButtonText = "Zugang löschen", CloseButtonText = "Schließen" };
+        dialog.PrimaryButtonClick += (_, e) => { try { eumetsatKeys.Save(key.Password, secret.Password); lightningClient?.Reset(); Send(new { type = "lightningReset" }); } catch { e.Cancel = true; status.Text = "Key und Secret eingeben; Speicherung fehlgeschlagen."; } };
+        dialog.SecondaryButtonClick += (_, e) => { try { eumetsatKeys.Delete(); lightningClient?.Reset(); Send(new { type = "lightningReset" }); } catch { e.Cancel = true; status.Text = "Zugang konnte nicht gelöscht werden."; } };
+        try { await dialog.ShowAsync(); } finally { key.Password = ""; secret.Password = ""; settingsOpen = false; }
     }
     private async Task ShowSettingsAsync()
     {

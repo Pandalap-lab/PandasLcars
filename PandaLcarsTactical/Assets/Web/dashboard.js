@@ -2,7 +2,7 @@
 const $ = id => document.getElementById(id);
 const vienna = {name:"Wien",latitude:48.2082,longitude:16.3738,country:"Österreich",region:""};
 const earthMotion=new PandaEarthMotion();
-let nightLayer, nightDetailLayer;
+let nightLayer, nightDetailLayer, earthFlight=false;
 let place={...vienna}, report=null, weatherEnabled=true, tracking=false, viewer, target, osm, pendingWeather=null, pendingSearch=null, generation=0, forecastTimer;
 let internetOnline=null, searchNeedsRetry=false;
 window.pandaInternetOnline=null;
@@ -117,7 +117,8 @@ function fly(height){
  if(!viewer)return;
  stopSmoothZoom();
  if(tracking){tracking=false;viewer.trackedEntity=undefined;pressed("track",false);}
- viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude,height),orientation:{heading:0,pitch:-Cesium.Math.PI_OVER_TWO,roll:0},duration:1.5});
+ earthFlight=true;
+ viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude,height),orientation:{heading:0,pitch:-Cesium.Math.PI_OVER_TWO,roll:0},duration:1.5,complete:()=>{earthFlight=false;},cancel:()=>{earthFlight=false;}});
 }
 function renderGlobeWeather(){
  const lines=[place.name.toUpperCase()];
@@ -138,13 +139,13 @@ function updateTargetLabel(){
  }
 }
 function syncSwitches(){
- pressed("weatherOn",weatherEnabled);pressed("weatherOff",!weatherEnabled);
+
  for(const key of Object.keys(selections)){$(key).disabled=!weatherEnabled;pressed(key,selections[key]);}
  renderGlobeWeather();
 }
 function setWeather(on){
  if(on===weatherEnabled)return;
- weatherEnabled=on;syncSwitches();syncRadar();eventFeed("Wetter-Layer "+(on?"ON":"OFF"));
+ weatherEnabled=true;syncSwitches();syncRadar();
 }
 function loadWeather(){
  if(pendingWeather||internetOnline===false)return;
@@ -263,6 +264,7 @@ async function initializeGlobe(){
   viewer.camera.percentageChanged=.02;
   viewer.camera.changed.addEventListener(()=>{
    const height=viewer.camera.positionCartographic.height;
+   updateZoomEarthMode(height);
    // Natural Earth at global scale; detailed roads and place names close up.
    const alpha=Math.max(0,Math.min(1,(2500000-height)/1800000));
    if(Math.abs(osm.alpha-alpha)>.01){osm.alpha=alpha;viewer.scene.requestRender();}
@@ -270,7 +272,7 @@ async function initializeGlobe(){
   });
   target=viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude),
    viewFrom:new Cesium.Cartesian3(0,-150000,180000)});
-  const targetIcon=document.createElement("img");targetIcon.id="targetIcon";targetIcon.className="map-symbol";targetIcon.src="target-reticle.png";targetIcon.alt="Tactical-Ziel";targetIcon.width=112;targetIcon.height=112;document.querySelector(".map-wrap").append(targetIcon);
+  const targetIcon=document.createElement("img");targetIcon.id="targetIcon";targetIcon.className="map-symbol";targetIcon.src="target-reticle.png";targetIcon.alt="Tactical-Ziel";targetIcon.width=56;targetIcon.height=56;document.querySelector(".map-wrap").append(targetIcon);
   const cityLabel=document.createElement("div");cityLabel.id="cityLabel";cityLabel.className="city-label";cityLabel.textContent=place.name;document.querySelector(".map-wrap").append(cityLabel);
   viewer.scene.postRender.addEventListener(()=>{
    const position=target.position.getValue(viewer.clock.currentTime);
@@ -379,8 +381,13 @@ function globalHeight(){
 }
 let zoomTarget=null,zoomFrame=0,zoomTime=0;
 function stopSmoothZoom(){cancelAnimationFrame(zoomFrame);zoomFrame=0;zoomTarget=null;}
+function updateZoomEarthMode(height){
+ if(earthFlight)return;
+ if(earthMotion.earth&&height<2400000)setEarthMode(false);
+ else if(!earthMotion.earth&&height>2600000)setEarthMode(true);
+}
 function beginSmoothZoom(height){
- earthMotion.pause(performance.now());if(height<2500000)setEarthMode(false);
+ earthMotion.pause(performance.now());
  if(!viewer)return;
  viewer.camera.cancelFlight();
  if(tracking){tracking=false;viewer.trackedEntity=undefined;pressed("track",false);}
@@ -416,7 +423,7 @@ $("sensors").onclick=()=>{const on=$("sensors").getAttribute("aria-pressed")!=="
 // Weather controls remain available; LAYERS takes keyboard focus to the selection.
 $("layers").onclick=()=>{
  const host=$("layerOptions");host.replaceChildren();
- for(const id of ["weatherOn","weatherOff","radar","clouds","rain","heat","lightningOpen"]){
+ for(const id of ["radar","clouds","rain","heat","lightningToggle","dustToggle","lightningOpen"]){
   const source=$(id),button=document.createElement("button");button.textContent=source.textContent;
   button.setAttribute("aria-pressed",source.getAttribute("aria-pressed")??"false");
   button.onclick=()=>{source.click();button.setAttribute("aria-pressed",source.getAttribute("aria-pressed")??"false");for(const other of host.children){const original=$(other.dataset.source);other.setAttribute("aria-pressed",original.getAttribute("aria-pressed")??"false");}};
@@ -425,7 +432,7 @@ $("layers").onclick=()=>{
  $("layerDialog").showModal();
 };
 $("closeLayers").onclick=()=>$("layerDialog").close();
-$("weatherOn").onclick=()=>setWeather(true);$("weatherOff").onclick=()=>setWeather(false);
+
 $("lightningOpen").onclick=()=>send("lightning",{place});
 for(const key of Object.keys(selections))$(key).onclick=()=>{selections[key]=!selections[key];pressed(key,selections[key]);renderGlobeWeather();};
 $("settings").onclick=()=>send("settings");

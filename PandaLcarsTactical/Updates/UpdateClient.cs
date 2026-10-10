@@ -9,6 +9,7 @@ public sealed class UpdateClient
 {
     private const string Repository = "https://github.com/Pandalap-lab/PandasLcars/releases/download/";
     private readonly HttpClient http;
+    private static DateTimeOffset rateLimitUntil;
     private readonly string updatesDirectory;
     public UpdateClient(HttpClient http, string? updatesDirectory = null)
     {
@@ -32,9 +33,15 @@ public sealed class UpdateClient
     }
     public async Task<UpdateRelease?> CheckAsync(Version current)
     {
+        if (DateTimeOffset.UtcNow < rateLimitUntil) throw new IOException("GitHub-Abrufpause bis " + rateLimitUntil.ToLocalTime().ToString("HH:mm") + ".");
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/Pandalap-lab/PandasLcars/releases/latest");
         request.Headers.UserAgent.ParseAdd("PandasLcars/" + current);
         using var response = await http.SendAsync(request);
+        if ((int)response.StatusCode is 403 or 429) {
+            rateLimitUntil = DateTimeOffset.UtcNow.AddMinutes(5);
+            if (response.Headers.TryGetValues("X-RateLimit-Reset", out var resets) && long.TryParse(resets.FirstOrDefault(), out var seconds) && seconds > DateTimeOffset.UtcNow.ToUnixTimeSeconds() && seconds < DateTimeOffset.UtcNow.AddHours(2).ToUnixTimeSeconds()) rateLimitUntil = DateTimeOffset.FromUnixTimeSeconds(seconds);
+            throw new IOException("GitHub-Abrufpause bis " + rateLimitUntil.ToLocalTime().ToString("HH:mm") + ".");
+        }
         response.EnsureSuccessStatusCode();
         return Parse(await response.Content.ReadAsStringAsync(), current);
     }

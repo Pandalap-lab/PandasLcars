@@ -1,3 +1,7 @@
+# PandasLcars 0.6.10
+
+EUMETSAT-Wolken und Blitze, GeoSphere-Saharastaub als Kartenoverlay, kleinere Targets und automatische Earth-Rückkehr beim Herauszoomen. Wetterebenen dauerhaft verfügbar; GitHub-Abrufpausen und Installationsbestätigung verbessert. Details und Grenzen: docs/release-0.6.10.md.
+
 # PandasLcars 0.6.9
 
 Detailliertes transparentes Tactical-Target und NASA-Nachtkacheln beim Zoomen. Geprüfte Update-Downloads werden wiederverwendet; Installationsprotokoll ergänzt. Nachtauflösung und Norton-Abnahme bleiben ausdrücklich begrenzt/offen. Details: docs/release-0.6.9.md.

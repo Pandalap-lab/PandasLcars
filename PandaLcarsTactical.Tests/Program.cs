@@ -166,6 +166,12 @@ finally { Directory.Delete(testFolder,true); }
   Check(handler.Downloads==2,"Changed installer is downloaded again instead of trusted");
  } finally {if(Directory.Exists(updateFolder))Directory.Delete(updateFolder,true);}
 }
+{
+ var handler=new RateLimitFixtureHandler();using var limitedHttp=new HttpClient(handler);
+ var updater=new PandaLcarsTactical.Updates.UpdateClient(limitedHttp);
+ for(int i=0;i<2;i++){bool paused=false;try{await updater.CheckAsync(new Version(0,6,9));}catch(IOException e){paused=e.Message.Contains("Abrufpause");}Check(paused,"Rate limit is explained instead of generic failure");}
+ Check(handler.Calls==1,"Rate limit prevents repeated requests");
+}
 Console.WriteLine("All weather, radar, system, quicklaunch and activity tests passed.");
 sealed class FixtureHandler(string data):HttpMessageHandler {
  protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){token.ThrowIfCancellationRequested();return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(data)});}
@@ -195,4 +201,8 @@ sealed class UpdateFixtureHandler:HttpMessageHandler {
   if(request.RequestUri!.AbsolutePath=="/sums")return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes))+"  PandasLcars-Setup.exe")});
   Downloads++;return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new ByteArrayContent(bytes)});
  }
+}
+sealed class RateLimitFixtureHandler:HttpMessageHandler {
+ public int Calls;
+ protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token){Calls++;var response=new HttpResponseMessage(HttpStatusCode.TooManyRequests);response.Headers.Add("X-RateLimit-Reset",DateTimeOffset.UtcNow.AddMinutes(3).ToUnixTimeSeconds().ToString());return Task.FromResult(response);}
 }

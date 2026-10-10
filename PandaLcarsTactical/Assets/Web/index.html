@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://tile.openstreetmap.org https://tilecache.rainviewer.com https://gibs.earthdata.nasa.gov; worker-src 'self' blob:; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://tile.openstreetmap.org https://tilecache.rainviewer.com https://gibs.earthdata.nasa.gov https://view.eumetsat.int; worker-src 'self' blob:; object-src 'none'; frame-src 'none'">
 <title>PandasLcars</title><link rel="stylesheet" href="Cesium/Widgets/widgets.css"><link rel="stylesheet" href="dashboard.css">
-<script src="Cesium/Cesium.js" defer></script><script src="zoom.js" defer></script><script src="earth-motion.js" defer></script><script src="dashboard.js" defer></script><script src="satellite.min.js" defer></script><script src="iss.js" defer></script><script src="quicklaunch.js" defer></script><script src="waterlevel.js" defer></script><script src="settings.js" defer></script></head>
+<script src="Cesium/Cesium.js" defer></script><script src="zoom.js" defer></script><script src="earth-motion.js" defer></script><script src="dashboard.js" defer></script><script src="satellite.min.js" defer></script><script src="iss.js" defer></script><script src="weather-overlays.js" defer></script><script src="dust-overlay.js" defer></script><script src="quicklaunch.js" defer></script><script src="waterlevel.js" defer></script><script src="settings.js" defer></script></head>
 <body>
 <div id="updateNotice" role="status" hidden></div>
 <div class="dashboard">
@@ -26,7 +26,7 @@
   <div class="weather-compact"><div class="weather-top"><h2>WETTER <span id="weatherPlace">WIEN</span></h2>
   </div>
   <div class="weather-body"><div class="weather-reading"><span id="currentWeatherIcon" aria-label="Wetterzustand">☁</span><strong id="temperature">— °C</strong></div><div id="weatherDetails" class="weather-table"><div class="weather-line"><span><svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19h11a4 4 0 0 0 0-8 6 6 0 0 0-12-1 4.5 4.5 0 0 0 1 9Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Wolken <b id="cloudValue">—</b></span><span><svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C9 7 5 11 5 15a7 7 0 0 0 14 0c0-4-4-8-7-13ZM8 15a4 4 0 0 0 4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> <span id="rainInterval">Regen (15 Min.)</span> <b id="rainValue">—</b></span></div><div class="weather-line"><span><svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8h13a3 3 0 1 0-3-3M2 12h18a3 3 0 1 0-3-3M2 16h10a3 3 0 1 1-3 3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Wind <b id="windValue">—</b></span><span><svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C9 7 5 11 5 15a7 7 0 0 0 14 0c0-4-4-8-7-13ZM8 15a4 4 0 0 0 4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Feuchte <b id="humidityValue">—</b></span><span><svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 12l5-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Luftdruck <b id="pressureValue">—</b></span></div></div>
-  </div><div class="weather-layers" id="layerTray">   <div class="switch-group" role="group" aria-label="Wetter-Layer"><span>LAYER</span><button id="weatherOn" aria-pressed="false">ON</button><button id="weatherOff" aria-pressed="true">OFF</button></div>
+  </div><div class="weather-layers" id="layerTray">
    <button id="refresh" title="Wetter und Vorhersage aktualisieren">↻</button><button id="settings" title="Wetter-API konfigurieren">⚙</button>
 <button id="radar" aria-pressed="false" title="Regenradar von RainViewer ein-/ausblenden">RADAR</button><button id="clouds" aria-pressed="false">WOLKEN</button><button id="rain" aria-pressed="false">NIEDERSCHLAG</button><button id="heat" aria-pressed="true">TEMPERATUR</button>
     <div class="switch-group lightning-switch"><button id="lightningOpen" title="Kleines Firefox-Fenster auf dem LCARS-Bildschirm">BLITZKARTE ↗</button></div>
@@ -63,7 +63,7 @@
  <section class="panel targets"><h2>TARGETS / DESTINATIONS</h2><form id="searchForm"><input id="search" type="search" placeholder="Ort suchen …" aria-label="Ort suchen" minlength="2" maxlength="100"><button type="submit" title="Ort suchen">⌕</button></form><small id="searchStatus" role="status">Ziel wählen · Entfernung ab Wien</small><div id="destinations"></div></section>
  </div><section class="quick panel water-panel" aria-label="Donau Wasserstand Korneuburg"><h2>DONAU · KORNEUBURG <button id="waterRefresh" aria-label="Pegelgrafik aktualisieren">↻</button></h2><button id="waterOpen" title="Originalgrafik in Großansicht öffnen"><img id="waterImage" alt="Originalgrafik Hydro NÖ: Korneuburg, Wasserstand und Prognose" hidden></button><small id="waterStatus" role="status">Originalgrafik wird geladen …</small></section>
 </div>
-<footer><span>PandasLcars v0.6.9 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Dienste im Browser öffnen">DIENSTE · IM BROWSER ÖFFNEN</button></footer>
+<footer><span>PandasLcars v0.6.10 &nbsp; // &nbsp; WINDOWS 11 &nbsp; // &nbsp; <span id="connection">BEREIT</span></span><button id="fullscreen">VOLLBILD</button><button id="serviceSummary" title="Dienste im Browser öffnen">DIENSTE · IM BROWSER ÖFFNEN</button></footer>
 </div>
 <dialog id="linkDialog" aria-labelledby="linkDialogTitle"><form id="linkForm">
  <h2 id="linkDialogTitle">QUICK LAUNCH · LINK HINZUFÜGEN</h2>
@@ -86,6 +86,6 @@
 <div id="serviceRows"></div><p id="serviceWarning" role="alert"></p>
 <p>Die Dienste öffnen sich im Browser und verwenden die dort vorhandene Anmeldung.</p>
 
-<div class="dialog-actions"><button id="weatherSettings">WETTER-ZUGANG</button><button id="closeAppSettings">ZURÜCK ZU TACTICAL</button></div>
+<div class="dialog-actions"><button id="eumetsatSettings">EUMETSAT · BLITZE</button><button id="weatherSettings">WETTER-ZUGANG</button><button id="closeAppSettings">ZURÜCK ZU TACTICAL</button></div>
 </dialog>
 </body></html>

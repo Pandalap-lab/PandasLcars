@@ -150,10 +150,16 @@ dialog{color:#acd5ff;background:#02080f;border:2px solid #748eec;border-radius:1
 /* Original Hydro NÖ chart replaces the former Quick Launch panel. */
 .water-panel{min-width:0;overflow:hidden}.water-panel #waterOpen{flex:1;min-height:0;width:100%;padding:0;border:0;background:#fff;overflow:hidden;border-radius:0}.water-panel img{width:100%;height:100%;object-fit:contain;display:block;background:white}.water-panel img[hidden]{display:none}.water-panel small{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:12px}.saved-links{height:160px;display:flex;flex-direction:column;padding:6px}.saved-links h2{display:flex;justify-content:space-between}.saved-links #quickLinks{min-height:68px}
 /* Detailed tactical marker; transparent DOM overlay avoids globe texture artifacts. */
-.map-symbol{width:112px;height:112px}
+.map-symbol{width:56px;height:56px}
 .city-label{font-family:PandaCondensed,sans-serif;font-size:14px;line-height:1.1;max-width:150px;pointer-events:none}
 .city-label span{display:block}
 .city-label span:first-child{font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .city-label:before{width:27px;top:5px!important;right:calc(100% + 2px)!important;transform:rotate(25deg)}
 .city-label.label-left:before{right:auto!important;left:calc(100% + 2px);transform:rotate(-25deg);transform-origin:left center}
-@media(max-width:1300px){.map-symbol{width:96px;height:96px}.city-label{font-size:12px}}
+@media(max-width:1300px){.map-symbol{width:48px;height:48px}.city-label{font-size:12px}}
+
+#satelliteStatus{font-size:12px;color:#8cceff;line-height:1.25;padding:2px 6px;overflow-wrap:anywhere}
+
+
+#satelliteBadge{position:absolute;left:10px;top:100px;right:160px;z-index:3;pointer-events:none;color:#8cceff;font-size:10px;line-height:1.15;text-shadow:0 1px 2px #000;max-width:450px}
+#dustLegend{position:absolute;left:10px;bottom:53px;max-width:calc(100% - 170px);display:flex;flex-direction:column;gap:3px;padding:5px 8px;border-left:2px solid #ba874c;background:#080c10d9;font-size:10px;pointer-events:auto;z-index:3}#dustLegend b{font-weight:normal;color:#e7be88}#dustLegend a{color:#a9cfe6;font-size:9px}.dust-scale{background:linear-gradient(90deg,transparent,#a6703aab);color:#fff;white-space:pre;padding:2px 4px}#dustToggle[aria-pressed=true]{background:#ba874c;color:#100b04;border-color:#e6be89}

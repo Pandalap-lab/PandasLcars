@@ -91,6 +91,27 @@ const server=http.createServer((req,res)=>{
   await page.locator('#earth').click();
   assert(await page.evaluate(()=>earthMotion.enabled&&earthMotion.resumeAt<=performance.now()&&document.querySelector('#earth').getAttribute('aria-pressed')==='true'&&document.querySelector('#earthRotation').checked&&localStorage.getItem('panda.earthRotation')==='true'));
   console.log('PASS EARTH button stops and restarts rotation; settings and persistence synchronized');
+  await page.waitForTimeout(1700);
+  await page.evaluate(()=>setEarthRotation(false));
+  for(let round=0;round<2;round++) {
+   await page.evaluate(()=>beginSmoothZoom(2200000));await page.waitForFunction(()=>zoomTarget===null);assert.equal(await page.evaluate(()=>earthMotion.earth),false);
+   await page.evaluate(()=>beginSmoothZoom(3000000));await page.waitForFunction(()=>zoomTarget===null);assert.equal(await page.evaluate(()=>earthMotion.earth),true);
+  }
+  await page.locator('#lightningToggle').click();
+  await page.waitForFunction(()=>testSent.some(x=>x.type==='lightningData'));
+  const beforeLightning=await page.evaluate(()=>viewer.scene.primitives.length);
+  await page.evaluate(()=>testMessage({type:'lightningData',data:{from:new Date(Date.now()-600000).toISOString(),to:new Date().toISOString(),qualityWarning:false,points:[{latitude:48.2,longitude:16.3,confidence:.9,time:new Date().toISOString()}]}}));
+  assert.equal(await page.evaluate(()=>viewer.scene.primitives.length),beforeLightning+1);
+  await page.evaluate(()=>testMessage({type:'lightningData',data:{from:'2000-01-01T00:00:00Z',to:'2000-01-01T00:10:00Z',points:[]}}));
+  assert.equal(await page.evaluate(()=>viewer.scene.primitives.length),beforeLightning);
+  assert((await page.locator('#satelliteBadge').innerText()).includes('veraltet'));
+  await page.locator('#lightningToggle').click();
+  await page.locator('#clouds').click();await page.waitForFunction(()=>testSent.some(x=>x.type==='cloudData'));
+  await page.evaluate(()=>testMessage({type:'cloudData',error:'Wolkenbild nicht verfügbar'}));
+  assert((await page.locator('#satelliteBadge').innerText()).includes('nicht verfügbar'));
+  await page.locator('#clouds').click();
+  await page.evaluate(()=>setEarthRotation(true));
+  console.log('PASS repeated zoom roundtrip, lightning primitives, stale removal and cloud error');
   await page.locator('#lightningOpen').click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='lightning'&&x.place.name==='Wien')));
   console.log('PASS EARTH lighting, target mode and external lightning request');
@@ -246,7 +267,7 @@ const server=http.createServer((req,res)=>{
    if(width===1280)await page.screenshot({path:path.join(shot,'dashboard-1280.png')});
    assert(await page.locator('#waterOpen').isVisible());
    assert(await page.locator('#waterOpen').evaluate(el=>el.clientHeight>0));
-   for(const id of ['weatherOn','weatherOff','radar','clouds','rain','heat']){
+   for(const id of ['radar','clouds','rain','heat','dustToggle','lightningToggle']){
     assert(await page.locator('#'+id).isVisible(),id+' stays visible after repeated LAYERS clicks');
     const bounds=await page.locator('#'+id).boundingBox();
     assert(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=width&&bounds.y+bounds.height<=height,id+' within viewport');
