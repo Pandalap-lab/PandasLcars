@@ -14,6 +14,11 @@
  const earth=()=>typeof viewer!=="undefined"&&viewer&&earthMotion.earth;
  function clearPoints(){if(points&&viewer){viewer.scene.primitives.remove(points);points=null;viewer.scene.requestRender();}}
  function clearCloud(){cloudRevision++;cloudLoading=false;if(cloud&&viewer){viewer.imageryLayers.remove(cloud,true);cloud=null;viewer.scene.requestRender();}}
+ // Smoothstep gives continuous opacity through both zoom thresholds, in day and night.
+ function cloudOpacity(height){const t=Math.max(0,Math.min(1,(height-250000)/5750000));return .3+.7*t*t*(3-2*t);}
+ window.pandaCloudOpacity=cloudOpacity;
+ let observedViewer=null;
+ function updateCloudOpacity(){if(!cloud||!viewer)return;const alpha=cloudOpacity(viewer.camera.positionCartographic.height);if(Math.abs(cloud.alpha-alpha)>.001){cloud.alpha=alpha;viewer.scene.requestRender();}}
  function labels(){
   const lines=[];
   const period=frame?stamp(frame.from)+'–'+localTime(frame.to):'noch keine Daten';
@@ -53,12 +58,14 @@
     ctx.putImageData(pixels,0,0);img.close();
     const provider=await Cesium.SingleTileImageryProvider.fromUrl(canvas.toDataURL(),{rectangle:Cesium.Rectangle.fromDegrees(-77,-77,77,77),credit:'Wolkenmaske © EUMETSAT'});
     if(revision!==cloudRevision)return;
-    cloud=viewer.imageryLayers.addImageryProvider(provider);cloud.dayAlpha=1;cloud.nightAlpha=1;viewer.scene.requestRender();
+    cloud=viewer.imageryLayers.addImageryProvider(provider);cloud.dayAlpha=1;cloud.nightAlpha=1;updateCloudOpacity();viewer.scene.requestRender();
   }catch(e){if(revision===cloudRevision){cloudError='Wolkenbild nicht erreichbar';cloudNext=Date.now()+300000;labels();}}
   finally{if(revision===cloudRevision)cloudLoading=false;}
  }
  function tick(){
   if(!viewer)return;
+  if(observedViewer!==viewer){observedViewer=viewer;viewer.scene.preRender.addEventListener(updateCloudOpacity);}
+  updateCloudOpacity();
   const active=wanted&&weatherEnabled&&earth();
   if(!active||frame&&stale(frame.to,30))clearPoints();else if(frame&&!points)draw();
   if(!selections.clouds||!weatherEnabled||cloudFrame&&stale(cloudFrame.time,90))clearCloud();else if(cloudFrame&&!cloud&&!cloudLoading&&!cloudError)showCloud(cloudFrame);

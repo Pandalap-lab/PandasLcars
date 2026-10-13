@@ -12,7 +12,18 @@
   details.hidden=!wanted;
   const text=!wanted?'Kartenebene ausgeschaltet':error||(!frame?'Saharastaub wird geladen …':stale()?'Saharastaub veraltet · ausgeblendet':'Prognose '+stamp(frame.time)+' · Modell '+stamp(frame.run));
   legend.replaceChildren();const title=document.createElement('b');title.textContent=text;legend.append(title);
-  if(wanted&&frame&&!stale()){const scale=document.createElement('span');scale.className='dust-scale';for(const label of ['0','100','500','≥ 1.000 mg/m²']){const tick=document.createElement('span');tick.textContent=label;scale.append(tick);}legend.append(scale);}
+  if(wanted&&frame&&!stale()){
+   const scale=document.createElement('span');scale.className='dust-scale';
+   for(const [label,position] of [['0',0],['100',10],['500',50],['≥ 1.000 mg/m²',100]]){const tick=document.createElement('span');tick.textContent=label;tick.style.left=position+'%';scale.append(tick);}
+   const x=Math.floor((place.longitude-frame.west)/(frame.east-frame.west)*frame.width),y=Math.floor((frame.north-place.latitude)/(frame.north-frame.south)*frame.height);
+   const value=x>=0&&x<frame.width&&y>=0&&y<frame.height?frame.values[y*frame.width+x]:null;
+   const local=document.createElement('span');local.className='dust-local';
+   if(value!==null&&Number.isFinite(value)&&value>=0){
+    const text=place.name+': '+value.toLocaleString('de-AT',{maximumFractionDigits:1})+' mg/m² · Prognose';
+    const marker=document.createElement('i');marker.className='dust-marker';marker.style.left=Math.min(100,value/10)+'%';marker.title=text;marker.setAttribute('aria-label',text);scale.append(marker);local.textContent=text;
+   }else local.textContent=place.name+': keine Daten';
+   legend.append(scale,local);
+  }
   const source=document.createElement('a');source.href='https://doi.org/10.60669/metr-z617';source.target='_blank';source.rel='noopener';source.textContent='GeoSphere Austria · CC BY 4.0 · Luftsäule';legend.append(source);
   details.textContent='Saharastaub · '+text+' · Staubmenge in der gesamten Luftsäule (mg/m²), keine bodennahe Feinstaubmessung. Abdeckung: Europa/Nordafrika (20–64°N, 20°W–40°E). GeoSphere Austria · CC BY 4.0.';
  }
@@ -27,7 +38,7 @@
     // Fixed scale: same mass always has the same opacity; no per-frame normalization.
     const x=i%frame.width,y=Math.floor(i/frame.width);
     const edge=Math.min(1,x/3,y/3,(frame.width-1-x)/3,(frame.height-1-y)/3);
-    const alpha=Math.min(170,170*Math.sqrt(value/1000))*Math.max(0,edge);
+    const alpha=Math.min(205,205*Math.sqrt(value/600))*Math.max(0,edge);
     pixels.data[i*4]=166;pixels.data[i*4+1]=112;pixels.data[i*4+2]=58;pixels.data[i*4+3]=Math.round(alpha);
    }
    ctx.putImageData(pixels,0,0);

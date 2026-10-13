@@ -1,3 +1,7 @@
+# PandasLcars 0.6.13
+
+Saharastaub-Targetmarker und stärkerer Dunst, zoomabhängige Wolkentransparenz, interaktives astronomisch berechnetes Sonnensystem mit Starfleet-Panda. Siehe docs/release-0.6.13.md.
+
 # PandasLcars 0.6.12
 
 Transparente durchgehende Wolkenansicht, Zeitangaben rechts, kompakte Overlay-Kachel, Platz für SYSTEM STATUS, korrigierte Vorhersage und dynamischer Versionsvergleich. Siehe docs/release-0.6.12.md.

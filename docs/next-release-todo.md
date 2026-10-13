@@ -1,25 +1,11 @@
-# LCARS – Notion-Aufgaben 07.10.2026 / Update 0.6.6
+# Nächste Release – offene Änderungen
 
-Quelle: [LCARS Dashboard in Notion](https://www.notion.so/3f2846adf71081cd8da5cf82ce617922), Abschnitt „Neue To-dos – 07.10.2026“. Per Notion-Desktop gelesen. Die dort erwähnte PANDAsPrivatKI wurde gemäß direkter Nutzeranweisung nicht eingesetzt. Die älteren freigegebenen Gestaltungspunkte sind bereits Bestandteil von 0.6.5.
+Stand 13.10.2026: Die nachstehenden Anforderungen sind für 0.6.13 umgesetzt und lokal geprüft. Die ursprünglichen Statusangaben unten dokumentieren den Eingang der Anforderungen. Release- und Installer-Abnahme erfolgen durch den vollständigen Tag-Build. Details: [Release 0.6.13](release-0.6.13.md). Der angekündigte Inhalt der neuen Kachel ist damit als Sonnensystem festgelegt.
 
-## Radar / Earth
-- [x] Beleuchtung ausdrücklich vom Earth-Modus steuern; Radar ändert weder Uhrzeit noch Modus.
-- [x] Tages-/Nacht-Alpha der Nachtkarte und des Radar-Layers ausdrücklich setzen.
-- [x] Bildvergleich mit echter Radar-PNG und aktueller Sonnenbeleuchtung: Tagesseite bleibt hell; gegenüberliegende Nachtseite bleibt dunkel.
-- [x] Zweite Oberflächenprüfung gegen fertig gebaute Dateien erfolgreich.
-- Hinweis: Die vollständige Verdunkelung durch Radar war im kontrollierten Test nicht reproduzierbar. Kein Nachweis einer bestimmten ursprünglichen GPU-/Treiberursache; vorbeugende Zustandskorrektur und Regressionstest implementiert.
+- Freigegeben am 13.10.2026: Logo-Feld gemäß [Sonnensystem-Kontrollmockup](bildbibliothek/sonnensystem-panda-mockup-2026-10-13.png) übernehmen. Diese Vorlage konkretisiert und ersetzt die leere Kachel im vorherigen Panda-Mockup. Der gezeigte Panda im Starfleet-Outfit ersetzt das bisherige Logo; links unten ungefähr ein Viertel der Fläche für Panda samt „U.S.S. PANDA“ und „NCC-080470“. Die übrige Fläche zeigt unser Sonnensystem mit Sonne und acht Planeten, feinen Umlaufbahnen und Beschriftungen im LCARS-Stil.
+- Sonnensystem: Planetenpositionen für den aktuellen Zeitpunkt astronomisch berechnen und regelmäßig aktualisieren; keine Übernahme der schematischen Positionen aus dem Mockup. Berechnungszeit anzeigen und Positionsberechnung vor Veröffentlichung gegen eine verlässliche astronomische Referenz prüfen. Größen und Abstände dürfen zur Lesbarkeit angepasst sein; dies kennzeichnen.
+- Sonnensystem-Bedienung: Ansicht um alle drei Achsen X, Y und Z drehbar. CENTER stellt eine zentrierte Draufsicht auf das gesamte Sonnensystem her. Darstellung und Bedienung in der tatsächlichen Kachelgröße prüfen, einschließlich Lesbarkeit, Beschriftungsüberlappungen und Platz für den Panda. Status: Mockup freigegeben und in der Bildbibliothek gespeichert; interaktive Umsetzung noch offen.
 
-## WLAN / Internet
-- [x] Netzwerkadapter und Internetzugang getrennt prüfen; Anmeldeseiten nicht als Internet bestätigen.
-- [x] Status anzeigen, begrenzte Wiederholungen, keine überlappenden Prüfanfragen, Abbruch beim Schließen.
-- [x] Nach Wiederverbindung Wetter, Radar, Detailkarten, ISS, fehlende Icons und Updateprüfung nachladen.
-- [x] Fehlgeschlagene Ortssuche und Tactical-Web-Navigation wiederholen; keine Formular-POST-Wiederholung.
-- [x] Offline-/Online-Wechsel und einzelne Dienstausfälle automatisch getestet.
-- [x] Neuer Windows-Build nativ gestartet: INTERNET VERBUNDEN, Wetter/Forecast/ISS/Icons geladen, Terminatorkante sichtbar. Nach Laden echter Radarkacheln bleiben Tagesseite, Nachtseite und Niederschlagsfarben korrekt sichtbar.
-- [x] GitHub: Installation, Upgrade 0.6.5 → 0.6.6, Datenerhalt, erneute Installation, Deinstallation.
-- [x] Veröffentlichung und echter Installer-Download mit Prüfsumme.
-
-Keine Änderungen an PrivatKI, WLAN-Einstellungen, Norton oder Notion-Aufgabenstatus. Der reale Windows-Kaltstart mit verzögerter WLAN-Anmeldung bleibt eine Prüfung auf dem Laptop.
-
-Abschluss: Release v0.6.6 aus Commit 97a2931 veröffentlicht. GitHub-Lauf 37675450983 erfolgreich; echter Update-Download mit SHA-256 bestätigt. Updateangebot für 0.6.0–0.6.5, kein Update für 0.6.6. Zusätzliche Testinstanz geschlossen; installierte Anwendung nicht ersetzt.
-
+- Saharastaub: Punkt auf der Skala für den Prognosewert des ausgewählten Targets. Bei jedem Targetwechsel aktualisieren; außerhalb der Abdeckung oder bei fehlenden Daten keinen Punkt anzeigen. Lokal implementiert und geprüft, nicht Bestandteil von 0.6.12.
+- Für die nächste Release ausdrücklich vorgemerkt (13.10.2026): gut sichtbarer Marker oder Pfeil an der passenden Skalenposition, dazu Targetname und Prognosewert in mg/m². Bei Targetwechsel und neuen Prognosedaten aktualisieren. Fehlende Werte ausdrücklich als „Keine Daten“ ausweisen, niemals als 0 darstellen. Vor Veröffentlichung die Anzeige mit mehreren Targets und fehlenden Daten kontrollieren; SYSTEM STATUS darf dabei nicht verkleinert werden.
+- Wolken: Beim Hineinzoomen die Deckkraft weiter reduzieren, mit weichem Übergang abhängig von der Kamerahöhe. Ortsnamen, Küsten und Kartendetails müssen in Tag- und Nachtansicht sowie zusammen mit Saharastaub lesbar bleiben. Beim Herauszoomen zur normalen Übersichtstransparenz zurückkehren. Noch umzusetzen; Kontrollansichten für beide Zoomstufen erstellen.
