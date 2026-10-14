@@ -50,7 +50,7 @@
  function tick(){
   if(!wanted){if(layer||drawing)clear();return;}
   if(stale()&&(layer||drawing))clear();
-  if(!document.hidden&&window.pandaInternetOnline!==false&&!pending&&Date.now()>=next){pending=true;next=Date.now()+120000;send('dustData');}
+  if(!document.hidden&&!pending&&Date.now()>=next){pending=true;next=Date.now()+120000;send('dustData');}
   draw();labels();
  }
  button.onclick=()=>{wanted=!wanted;pressed(button.id,wanted);if(!wanted)clear();labels();tick();};

@@ -1,3 +1,7 @@
+# PandasLcars 0.6.14
+
+Targetbezogene Wiener Warnungen, kompakte Umweltkachel und schneller Sahara-Ortswert; separates Mondfenster, Titel-Panda, verbesserter Verbindungsstatus und räumliche ISS bei unveränderter Größe. Siehe docs/release-0.6.14.md.
+
 # PandasLcars 0.6.13
 
 Saharastaub-Targetmarker und stärkerer Dunst, zoomabhängige Wolkentransparenz, interaktives astronomisch berechnetes Sonnensystem mit Starfleet-Panda. Siehe docs/release-0.6.13.md.

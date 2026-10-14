@@ -220,3 +220,34 @@ dialog{color:#acd5ff;background:#02080f;border:2px solid #748eec;border-radius:1
 #solarDialog .solar-tools{left:29%;right:10px;bottom:12px;gap:6px}#solarDialog .solar-tools>div{grid-template-columns:2fr repeat(3,1fr);gap:8px}#solarDialog #solarCenter{grid-column:auto}
 #solarDialog .solar-tools button{font-size:14px;min-height:30px}#solarDialog .solar-tools small{font-size:11px}
 #solarDialog #solarDetails{display:grid;position:absolute;top:70%;left:29%;right:10px;grid-template-columns:repeat(4,1fr);gap:3px;font-size:10px}
+
+/* Official Vienna warnings; keep all tile contents reachable without shrinking. */
+#weatherAlert{margin:3px 9px 5px;padding-bottom:4px;border-bottom:1px solid #245776;font-size:10px;line-height:1.3;flex-shrink:0;overflow-wrap:anywhere}
+#weatherAlert>b{font-size:10px;color:#9dccff}#weatherAlert small,#weatherAlert>a{display:block;font-size:9px}#weatherAlert>a{color:#9dccff}#weatherAlert details{margin-top:2px}#weatherAlert summary{cursor:pointer}#weatherAlert p{white-space:pre-line;margin:5px 0}
+.alert-scale{position:relative;display:grid;grid-template-columns:repeat(4,1fr);height:22px;margin:4px 0 3px;color:#000;text-align:center;font:9px/22px 'Segoe UI',sans-serif;font-weight:600}
+.alert-scale span:nth-child(1){background:#39b85b}.alert-scale span:nth-child(2){background:#ffe04b}.alert-scale span:nth-child(3){background:#ff962e}.alert-scale span:nth-child(4){background:#e44343;color:#fff}
+.alert-scale i{position:absolute;top:-3px;height:28px;width:4px;background:#fff;transform:translateX(-50%);box-shadow:0 0 2px #000;border:1px solid #555}
+.dust-panel>*{flex-shrink:0}.dust-panel{overflow:auto}.right{grid-template-rows:minmax(180px,1.5fr) minmax(220px,1.2fr) minmax(125px,1fr)}
+/* Fit the full dashboard at Windows display scaling; extra warning content scrolls inside its tile. */
+.dashboard{min-height:590px}.right{min-height:0;grid-template-rows:minmax(180px,1.5fr) minmax(0,1.2fr) minmax(125px,1fr)}
+/* Review build: compact environmental tile and offline lunar calculations. */
+.solar-panda{display:none}.solar-stage{height:calc(100% - 24px)}.solar-tools{display:none}#solarDialog .solar-tools{display:flex;left:12px;right:12px}#solarDialog .solar-stage{height:66%}#solarDialog #solarDetails{left:12px}
+.title-panda{position:absolute;z-index:2;left:3px;top:3px;height:calc(100% - 6px);width:44px;object-fit:contain;background:#000;border-radius:8px}.top>.art{left:48px;right:0}
+#lunarStatus{display:flex;align-items:center;gap:5px;min-height:48px;border-top:1px solid #245776;margin-top:3px;padding:2px 0}#moonCanvas{width:48px;height:48px;flex-shrink:0}#lunarStatus>div{display:flex;flex-direction:column;min-width:0;font-family:PandaCondensed,'Arial Narrow',sans-serif;font-size:10px;line-height:1.2}#lunarStatus small{font-size:9px}#lunarStatus b{color:#ffb343}
+.weather-dock{min-height:0}.celestial-panel{overflow:auto}.weather-compact{align-self:start}
+.dust-panel h2{display:flex;justify-content:space-between;align-items:center}.dust-panel h2 button{min-height:15px;height:17px;padding:0 4px;font-size:14px;background:none;border:0;color:#000}
+.dust-panel:not(#environmentDialog .dust-panel) #weatherAlert details,.dust-panel:not(#environmentDialog .dust-panel) #weatherAlert>a,.dust-panel:not(#environmentDialog .dust-panel) #dustLegend,.dust-panel:not(#environmentDialog .dust-panel) #satelliteBadge,.dust-panel:not(#environmentDialog .dust-panel) #lightningInfo{display:none}
+#weatherAlert{margin:2px 8px;padding-bottom:3px;font-size:9px;line-height:1.15}#weatherAlert>b{font-size:9px}#weatherAlert small{font-size:8px}.alert-scale{height:17px;line-height:17px;margin:3px 0}.alert-scale i{height:23px}
+#dustLocalSummary{white-space:pre-line;font-size:10px;line-height:1.2;margin:2px 8px;color:#e7be88}#lightningBrief{font-size:9px;line-height:1.2;margin:3px 8px;padding-top:3px;border-top:1px solid #245776}
+#environmentDialog{padding:0;background:#000;color:#9dccff;width:min(740px,94vw);max-height:90vh;border:0}#environmentDialog::backdrop{background:#000b}#environmentDialog .dust-panel{max-height:88vh;overflow:auto;min-height:300px;padding-bottom:12px}#environmentDialog #weatherAlert{font-size:14px;line-height:1.4}#environmentDialog #weatherAlert>b{font-size:14px}#environmentDialog #weatherAlert small,#environmentDialog #weatherAlert>a{font-size:12px}#environmentDialog .alert-scale{height:28px;line-height:28px;font-size:12px}#environmentDialog .alert-scale i{height:34px}#environmentDialog #dustLocalSummary,#environmentDialog #lightningInfo,#environmentDialog #dustLegend{font-size:13px;line-height:1.4}#environmentDialog #lightningBrief{display:none}#environmentClose{margin:8px}
+@media(max-height:800px){.tactical{grid-template-rows:46px minmax(80px,1fr) auto}.weather-dock{min-height:0}}
+#moonCanvas{cursor:pointer}#lunarDialog{width:min(650px,94vw);background:#000;color:#9dccff;border:1px solid #3885be;border-radius:12px;max-height:90vh;overflow:auto}#lunarDialog::backdrop{background:#000b}#lunarDialog #moonCanvas{width:180px;height:180px}#lunarDialog #lunarStatus>div{font-size:16px;line-height:1.4}#lunarDialog #lunarStatus small{font-size:13px}#lunarDialog p{margin:8px 0}#lunarDialog button{margin-top:10px}
+/* Lunar information in aligned columns; rise/set already appear above. */
+#lunarStatus .lunar-table{border-collapse:collapse;font:inherit;line-height:1.25;width:100%;font-variant-numeric:tabular-nums}#lunarStatus .lunar-table th{font-weight:400;text-align:left;padding:0 7px 0 0;white-space:nowrap}#lunarStatus .lunar-table td{padding:0 5px 0 0;white-space:nowrap;text-align:left}#lunarStatus .lunar-table td:last-child{padding-right:0}#lunarStatus .lunar-table i{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:2px;box-sizing:border-box}.full-moon-symbol{background:#fff;border:1px solid #fff}.new-moon-symbol{background:#000;border:1px solid #c9d7e8}#lunarDialog .lunar-table i{width:13px;height:13px}
+
+#openLunar{color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}#openLunar:focus-visible{outline:2px solid #fff;outline-offset:2px}
+/* Match the update controls to the artwork shifted by the title Panda. */
+.update-controls{left:calc(79.95% + 9.62px);width:calc(5.2% - 2.5px);top:10%;height:80%;gap:4px;z-index:3}.update-controls button{line-height:1.05;overflow:hidden}
+
+/* Rounded outer warning-bar corners match LCARS tile headings; marker stays unclipped. */
+.alert-scale>span:first-child{border-radius:12px 0 0 12px}.alert-scale>span:nth-child(4){border-radius:0 6px 6px 0}

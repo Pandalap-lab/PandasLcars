@@ -1,0 +1,4 @@
+/* ISS keeps its original screen footprint and projection offsets at every zoom. */
+.iss-marker{width:36px}
+.iss-marker img{width:36px;height:27px;object-fit:contain;filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 .5px #74d9ee)}
+.iss-marker::after{content:"";position:absolute;left:18px;top:31px;transform:translate(-50%,-50%);width:3px;height:3px;border-radius:50%;background:#fff;border:.5px solid #55d8ee;box-shadow:0 0 2px #40d9f0;pointer-events:none}

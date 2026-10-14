@@ -111,7 +111,7 @@ public sealed partial class MainWindow : Window
             {
                 args.Handled = true;
                 if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var link) && link.Scheme == "https" &&
-                    new[] { "rainviewer.com", "www.rainviewer.com", "cesium.com", "openstreetmap.org", "www.openstreetmap.org", "open-meteo.com", "www.open-meteo.com" }.Contains(link.Host))
+                    new[] { "rainviewer.com", "www.rainviewer.com", "cesium.com", "openstreetmap.org", "www.openstreetmap.org", "open-meteo.com", "www.open-meteo.com", "data.hub.geosphere.at", "svs.gsfc.nasa.gov", "doi.org" }.Contains(link.Host))
                     await Windows.System.Launcher.LaunchUriAsync(link);
             };
             core.NavigationStarting += (_, args) =>

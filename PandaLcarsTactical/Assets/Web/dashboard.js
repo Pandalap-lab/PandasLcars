@@ -48,6 +48,12 @@ function drawArtwork(){
   const image=document.createElementNS("http://www.w3.org/2000/svg","image");
   image.setAttribute("href","../tactical-reference.png");image.setAttribute("width","1536");image.setAttribute("height","1024");
   svg.append(image);host.prepend(svg);
+  if(host.closest('.top')){
+   // Remove baked-in reference numbers behind the real update controls.
+   const cover=document.createElementNS(svg.namespaceURI,'rect');
+   for(const [key,value] of Object.entries({x:1226,y:0,width:84,height:76,fill:'#000'}))cover.setAttribute(key,value);
+   svg.append(cover);
+  }
   if (host.classList.contains("navigation")) {
    for (const [y,color,title,subtitle] of [[281,"#ed789a","WEB","PANDAs"],[476,"#a68be9","COMMUNICATION","CALENDAR"]]) {
     const cover=document.createElementNS(svg.namespaceURI,"rect");
@@ -109,6 +115,7 @@ function describePlace(){
 }
 function selectPlace(p){
  rememberTargets([p]);generation++; pendingWeather=null; send("cancelWeather");place={...p};report=null;describePlace();renderWeather();renderForecast();
+ window.dispatchEvent(new CustomEvent('panda-target-change',{detail:{...place}}));
  if(viewer){viewer.trackedEntity=undefined;tracking=false;pressed("track",false);target.position=Cesium.Cartesian3.fromDegrees(p.longitude,p.latitude);fly(220000);renderGlobeWeather();}
  eventFeed("Ziel gesetzt: "+p.name);loadWeather();
 }
@@ -219,7 +226,7 @@ window.chrome?.webview?.addEventListener("message",event=>{
  if(msg.type==="radar"&&msg.id===pendingRadar){pendingRadar=null;showRadar(msg.data);return;} 
  if(msg.type==="error"&&msg.id===pendingRadar&&pendingRadar){pendingRadar=null;removeRadar();radarStatus("Radar nicht verfügbar · erneut einschalten",true);return;}
  if(msg.type==="weather"&&msg.id===pendingWeather){
-  pendingWeather=null;report=msg.data;renderWeather();renderForecast();if(internetOnline===null)$("connection").textContent="INTERNET WIRD GEPRÜFT";
+  pendingWeather=null;report=msg.data;renderWeather();renderForecast();window.pandaServiceReachable?.("Wetterdienst");
   eventFeed("Wetter aktualisiert: "+place.name+", "+f(report.current.temperatureC)+" °C.");
  }else if(msg.type==="search"&&msg.id===pendingSearch){
   pendingSearch=null;searchNeedsRetry=false;rememberTargets(msg.data);$("searchStatus").textContent=msg.data.length?msg.data.length+" Treffer oben · bisherige Ziele bleiben erhalten":"Kein neuer Treffer · gespeicherte Ziele bleiben erhalten";
@@ -312,6 +319,13 @@ function createDetailMap(alpha){
  let noted=false;osm.imageryProvider.errorEvent.addEventListener(()=>{if(!noted){noted=true;eventFeed("Detailkarten nicht erreichbar; Weltkarte bleibt verfügbar.",true);}});
 }
 function applyInternetStatus(msg){
+ if(msg.connected!==true&&msg.networkAvailable&&Date.now()-(window.pandaLastServiceSuccess||0)<120000)return;
+ if(msg.connected!==true&&msg.networkAvailable){
+  internetOnline=null;window.pandaInternetOnline=null;
+  $("connection").textContent="VERBINDUNGSPRÜFUNG UNBESTÄTIGT";
+  $("connection").title="Allgemeine Prüfdienste nicht erreichbar. Wetter und GeoSphere werden unabhängig weiter abgerufen.";
+  return;
+ }
  const before=internetOnline;internetOnline=msg.connected===true;window.pandaInternetOnline=internetOnline;
  $("connection").textContent=internetOnline?"INTERNET VERBUNDEN":"INTERNET OFFLINE";
  $("connection").title=(msg.link||"Netzwerk")+(internetOnline?" · Internetzugriff geprüft":msg.networkAvailable?" verbunden, Internet nicht erreichbar · erneute Prüfung automatisch":" noch nicht verbunden · erneute Prüfung automatisch");
@@ -331,6 +345,10 @@ function applyInternetStatus(msg){
  if(searchNeedsRetry){const query=$("search").value.trim();if(query.length>=2){pendingSearch="search-"+(++generation);send("search",{id:pendingSearch,query});}searchNeedsRetry=false;}
  window.dispatchEvent(new Event("panda-internet-restored"));send("updateCheck");
 }
+window.pandaServiceReachable=source=>{
+ window.pandaLastServiceSuccess=Date.now();
+ if(internetOnline!==true)applyInternetStatus({connected:true,networkAvailable:true,link:source+" erreichbar"});
+};
 function applyEarthLighting(){
  if(!viewer)return;
  viewer.scene.globe.enableLighting=earthMotion.earth;

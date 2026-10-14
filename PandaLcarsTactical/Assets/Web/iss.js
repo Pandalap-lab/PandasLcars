@@ -4,7 +4,7 @@
  let record=null,epoch=0,nextFetch=0,pending=false,active=false,entities=[],lastTrail=0;
  const status=document.getElementById("issStatus");
  const mark=document.createElement("div");mark.id="issMarker";mark.className="iss-marker";mark.hidden=true;
- const label=document.createElement("span");label.textContent="ISS";const img=document.createElement("img");img.src="iss.png";img.alt="ISS mit Solarpaneelen";img.width=36;img.height=27;mark.append(label,img);document.querySelector(".map-wrap").append(mark);
+ const label=document.createElement("span");label.textContent="ISS";const img=document.createElement("img");img.src="iss-lcars.png";img.alt="Räumliche ISS mit Gitterträger, Modulen und Solarpaneelen";img.width=36;img.height=27;mark.append(label,img);document.querySelector(".map-wrap").append(mark);
  const locate=document.createElement("button");locate.id="issLocate";locate.textContent="ISS ANZEIGEN";locate.hidden=true;document.querySelector(".map-wrap").append(locate);
  locate.onclick=()=>{const p=entities[0]?.position?.getValue(viewer.clock.currentTime);if(!p)return;earthMotion.pause(performance.now());const c=Cesium.Cartographic.fromCartesian(p);viewer.camera.flyTo({destination:Cesium.Cartesian3.fromRadians(c.longitude,c.latitude,12000000),duration:1.2});};
  let projectionInstalled=false;
@@ -34,14 +34,18 @@
    const p=position(now);
    if(!entities.length){
     entities.push(viewer.entities.add({name:"ISS · berechnete Position",position:p}));
-    entities.push(viewer.entities.add({polyline:{positions:[],width:1.5,arcType:Cesium.ArcType.NONE,material:Cesium.Color.CYAN.withAlpha(.6)}}));
-    entities.push(viewer.entities.add({polyline:{positions:[],width:1.5,arcType:Cesium.ArcType.NONE,material:new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.CYAN.withAlpha(.6),dashLength:12})}}));
+    entities.push(viewer.entities.add({polyline:{positions:[],width:1.2,arcType:Cesium.ArcType.NONE,material:Cesium.Color.fromCssColorString('#b3f3ff').withAlpha(.88)}}));
+    entities.push(viewer.entities.add({polyline:{positions:[],width:1.2,arcType:Cesium.ArcType.NONE,material:new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.fromCssColorString('#45d5f3').withAlpha(.8),dashLength:12})}}));
+    // Faint halos share the exact SGP4 positions of the fine line cores.
+    entities.push(viewer.entities.add({polyline:{positions:[],width:3.5,arcType:Cesium.ArcType.NONE,material:new Cesium.PolylineGlowMaterialProperty({color:Cesium.Color.fromCssColorString('#42ddf2').withAlpha(.22),glowPower:.18})}}));
+    entities.push(viewer.entities.add({polyline:{positions:[],width:3.5,arcType:Cesium.ArcType.NONE,material:new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.fromCssColorString('#42ddf2').withAlpha(.12),dashLength:12})}}));
    }
    entities[0].position=p;
    if(now-lastTrail>60000){
     const past=[],future=[];
-    for(let i=-45;i<=90;i++){const q=position(now+i*60000);if(i<=0)past.push(q);if(i>=0)future.push(q);}
-    entities[1].polyline.positions=past;entities[2].polyline.positions=future;lastTrail=now;
+    for(let i=-45;i<=90;i+=.5){const q=position(now+i*60000);if(i<=0)past.push(q);if(i>=0)future.push(q);}
+    entities[1].polyline.positions=past;entities[2].polyline.positions=future;
+    entities[3].polyline.positions=past;entities[4].polyline.positions=future;lastTrail=now;
    }
    status.textContent="ISS · berechnet · Bahn −45 / +90 Min."+(mark.hidden?" · außerhalb der Ansicht":"")+(age>2*86400000?" · DATEN ÄLTER ALS 2 TAGE":"");
    status.title="Quelle: CelesTrak · Bahnepoche "+new Date(epoch).toLocaleString("de-AT")+" · gestrichelt: Prognose";
