@@ -20,7 +20,7 @@ function tick(){const c=selected?countdown(selected.launchUtc):null;el("sxCountd
 async function load(){
  el("sxUpdated").textContent="Datenabruf läuft …";
  try{
-  const response=await fetch("https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=100&mode=detailed",{signal:AbortSignal.timeout(12000)});
+  const response=await fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=100&mode=detailed",{signal:AbortSignal.timeout(12000)});
   if(!response.ok)throw Error("HTTP "+response.status);
   const data=await response.json();
   const parsed=(data.results??[]).filter(x=>/spacex/i.test(String(x.launch_service_provider?.name??""))).map(x=>({
