@@ -1,0 +1,30 @@
+name: SpaceX design preview
+on:
+  push:
+    branches: ['feature/0.6.16-spacex-design']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  spacex-preview:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check scripts, release references and mission formatting
+        run: node --test PandaLcarsTactical/Tests/spacex-mission.test.mjs PandaLcarsTactical/Tests/spacex-regression.test.mjs
+      - name: Verify SpaceX design and behavior in Edge
+        shell: pwsh
+        run: |
+          npm install --prefix "$env:RUNNER_TEMP/pandas-ui" --ignore-scripts --no-package-lock playwright@1.62.1
+          if ($LASTEXITCODE -ne 0) { throw 'UI test dependency installation failed' }
+          $env:PLAYWRIGHT_MODULE = "$env:RUNNER_TEMP/pandas-ui/node_modules/playwright"
+          node PandaLcarsTactical.Tests/spacex-board.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'SpaceX design tests failed' }
+      - name: Preserve SpaceX design screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpaceX-design-preview
+          path: qa/spacex-*.png
+          if-no-files-found: warn

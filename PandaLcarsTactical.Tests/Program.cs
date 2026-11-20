@@ -174,13 +174,13 @@ finally { Directory.Delete(testFolder,true); }
 }
 {
  var json = System.Text.Json.JsonSerializer.Serialize(new {
-  draft=false, prerelease=false, tag_name="v0.6.15",
-  assets=new[]{"PandasLcars-Setup.exe","SHA256SUMS.txt"}.Select(name=>new {name,browser_download_url="https://github.com/Pandalap-lab/PandasLcars/releases/download/v0.6.15/"+name})
+  draft=false, prerelease=false, tag_name="v0.6.16",
+  assets=new[]{"PandasLcars-Setup.exe","SHA256SUMS.txt"}.Select(name=>new {name,browser_download_url="https://github.com/Pandalap-lab/PandasLcars/releases/download/v0.6.16/"+name})
  });
- Check(PandaLcarsTactical.Updates.UpdateClient.Parse(json,new Version(0,6,14))?.Tag=="v0.6.15","0.6.14 discovers the 0.6.15 installer through the existing updater");
- Check(PandaLcarsTactical.Updates.UpdateClient.Parse(json,new Version(0,6,15)) is null,"0.6.15 never offers itself as an update");
- Check(PandaLcarsTactical.Updates.UpdateClient.Parse(json.Replace("\"draft\":false","\"draft\":true"),new Version(0,6,14)) is null,"A draft release never becomes a user update");
- Check(PandaLcarsTactical.Updates.UpdateClient.Parse(json.Replace("\"prerelease\":false","\"prerelease\":true"),new Version(0,6,14)) is null,"A test release never becomes a user update");
+ Check(PandaLcarsTactical.Updates.UpdateClient.Parse(json,new Version(0,6,15))?.Tag=="v0.6.16","0.6.15 discovers the 0.6.16 installer through the existing updater");
+ Check(PandaLcarsTactical.Updates.UpdateClient.Parse(json,new Version(0,6,16)) is null,"0.6.16 never offers itself as an update");
+ Check(PandaLcarsTactical.Updates.UpdateClient.Parse(json.Replace("\"draft\":false","\"draft\":true"),new Version(0,6,15)) is null,"A draft release never becomes a user update");
+ Check(PandaLcarsTactical.Updates.UpdateClient.Parse(json.Replace("\"prerelease\":false","\"prerelease\":true"),new Version(0,6,15)) is null,"A test release never becomes a user update");
 }
 Console.WriteLine("All weather, radar, system, quicklaunch and activity tests passed.");
 sealed class FixtureHandler(string data):HttpMessageHandler {

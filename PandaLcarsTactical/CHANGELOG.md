@@ -1,3 +1,7 @@
+# PandasLcars 0.6.16
+
+Ausschließlich das SpaceX-Board erhält die angepasste Gestaltung nach dem freigegebenen Mockup: größere Schrift, getrennte Countdown-Felder für Tage/Stunden/Minuten/Sekunden, NASA-Archivmotiv, ausgeprägte LCARS-Rundrahmen und klarere Missionsdetails ohne doppelte Angaben zur nächsten Mission. Startkalender, Datenstatus, sichere Streams und echte Starship-Telemetrie bleiben erhalten. Update wie gewohnt über UPDATES SUCHEN. Details: docs/release-0.6.16.md.
+
 # PandasLcars 0.6.15
 
 05 DATA öffnet die SpaceX-Missionskontrolle mit Startkalender, Wiener Ortszeit, geplantem Countdown, Status, offiziellen Streams und echter Starship-Feed-Anbindung. Tesla Roadster als anklickbares rotes Auto im Sonnensystem mit offline berechneten NASA/JPL-Ephemeriden. Datenalter, Ausfälle und fehlende Messwerte sind ausdrücklich erkennbar. Update weiterhin über UPDATES SUCHEN und 77852 · UPDATE LADEN. Details: docs/release-0.6.15.md.

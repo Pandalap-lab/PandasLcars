@@ -87,17 +87,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
           Compress-Archive artifacts/app/* artifacts/PandasLcars-Windows-x64.zip
           Get-FileHash artifacts/PandasLcars-Setup.exe,artifacts/PandasLcars-Windows-x64.zip -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } | Set-Content artifacts/SHA256SUMS.txt
-      - name: Get 0.6.14 source for upgrade test
+      - name: Get 0.6.15 source for upgrade test
         uses: actions/checkout@v4
         with:
-          ref: v0.6.14
+          ref: v0.6.15
           path: upgrade-baseline
       - name: Build previous installer
         shell: pwsh
         run: |
           dotnet publish upgrade-baseline/PandaLcarsTactical/PandaLcarsTactical.csproj -c Release -p:Platform=x64 -o upgrade-baseline/artifacts/app
           if ($LASTEXITCODE -ne 0) { throw 'Baseline build failed' }
-          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" /DAppVersion=0.6.14 upgrade-baseline/installer/PandasLcars.iss
+          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" /DAppVersion=0.6.15 upgrade-baseline/installer/PandasLcars.iss
           if ($LASTEXITCODE -ne 0) { throw 'Baseline installer failed' }
       - name: Test installation, upgrade and uninstall on clean runner
         shell: pwsh
@@ -121,7 +121,7 @@ jobs:
           $baseline = (Resolve-Path upgrade-baseline/artifacts/PandasLcars-Setup.exe).Path
           $initial = Start-Process -FilePath $baseline -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -WindowStyle Hidden -Wait -PassThru
           if ($initial.ExitCode -ne 0) { throw 'Baseline install failed' }
-          if ((Get-Item (Join-Path $appDir 'PandasLcars.exe')).VersionInfo.FileVersion -ne '0.6.14.0') { throw 'Baseline version mismatch' }
+          if ((Get-Item (Join-Path $appDir 'PandasLcars.exe')).VersionInfo.FileVersion -ne '0.6.15.0') { throw 'Baseline version mismatch' }
           $setup = (Resolve-Path artifacts/PandasLcars-Setup.exe).Path
           foreach ($attempt in 1..2) {
             $process = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/TASKS=autostart' -WindowStyle Hidden -Wait -PassThru
@@ -179,9 +179,9 @@ jobs:
           VERSION=$(python3 -c "import xml.etree.ElementTree as E; print(E.parse('PandaLcarsTactical/PandaLcarsTactical.csproj').findtext('PropertyGroup/Version'))")
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid release version'; exit 1; }
           TAG="v$VERSION"
-          # Completion of the explicitly requested 0.6.15 release. Other
+          # Completion of the explicitly requested 0.6.16 design release. Other
           # versions retain the existing manual-tag publication path.
-          if [ "$REF_TYPE" != tag ] && [ "$VERSION" != '0.6.15' ]; then
+          if [ "$REF_TYPE" != tag ] && [ "$VERSION" != '0.6.16' ]; then
             echo 'Build only: this version requires its normal release tag.'
             exit 0
           fi

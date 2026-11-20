@@ -12,44 +12,51 @@ dialog.innerHTML = `
   <div class="sx-shell">
     <header class="sx-header">
       <div class="sx-section-number" aria-hidden="true">05</div>
-      <div class="sx-heading"><p id="sxSubtitle">PANDAs LCARS · MISSIONSKONTROLLE</p><h1 id="sxTitle">SPACEX</h1></div>
+      <div class="sx-heading"><p id="sxSubtitle">PANDAs LCARS · DATENZENTRALE</p><h1 id="sxTitle">SPACEX <span>/ MISSION CONTROL</span></h1></div>
       <div class="sx-header-time"><span>WIEN · EUROPE/VIENNA</span><time id="sxClock">—</time></div>
       <button id="sxClose" class="sx-close" type="button" aria-label="SpaceX schließen und zum Dashboard zurückkehren">ZURÜCK <span aria-hidden="true">↗</span></button>
     </header>
     <div class="sx-toolbar"><p id="sxDataStatus" role="status">Startdaten werden geladen …</p><button id="sxRefresh" type="button">AKTUALISIEREN <span aria-hidden="true">↻</span></button></div>
     <div class="sx-grid">
       <section class="sx-card sx-next" aria-labelledby="sxNextHeading">
-        <h2 id="sxNextHeading"><span>01 · NÄCHSTER START</span><span class="sx-heading-end" aria-hidden="true">FLIGHT</span></h2>
+        <h2 id="sxNextHeading"><span>NÄCHSTER RAKETENSTART</span><span class="sx-heading-end" aria-hidden="true">01</span></h2>
         <div class="sx-next-body">
-          <p id="sxNextStatus" class="sx-kicker">WARTE AUF DATEN</p><h3 id="sxNextName">Mission wird geladen</h3>
-          <div class="sx-countdown-wrap"><span id="sxCountdownLabel">COUNTDOWN · GEPLANTER START</span><strong id="sxCountdown" aria-label="Countdown nicht verfügbar">—</strong><span id="sxCountdownNote">Starttermine können sich ändern.</span></div>
-          <dl class="sx-next-facts"><div><dt>RAKETE</dt><dd id="sxNextRocket">—</dd></div><div><dt>STARTORT</dt><dd id="sxNextPad">—</dd></div><div><dt>WIENER UHRZEIT</dt><dd id="sxNextTime">—</dd></div></dl>
+          <div class="sx-launch-overview">
+            <figure class="sx-launch-image"><img id="sxLaunchImage" src="spacex-launch.jpg" alt="Archivaufnahme: Falcon 9 beim Start der Crew-1-Mission am 15. November 2020."><figcaption>Raketenstart · Archivbild<span class="sx-image-credit">NASA/Joel Kowsky · Crew-1, 2020</span></figcaption></figure>
+            <div class="sx-next-copy"><p id="sxNextStatus" class="sx-kicker">WARTE AUF DATEN</p><h3 id="sxNextName">Mission wird geladen</h3>
+              <dl class="sx-next-facts"><div><dt>RAKETE</dt><dd id="sxNextRocket">—</dd></div><div><dt>STARTORT</dt><dd id="sxNextPad">—</dd></div><div><dt>START · WIEN</dt><dd id="sxNextTime">—</dd></div></dl>
+            </div>
+          </div>
+          <div class="sx-countdown-wrap"><span id="sxCountdownLabel">COUNTDOWN · GEPLANTER START</span><div id="sxCountdown" data-mode="empty" aria-label="Countdown nicht verfügbar"><div id="sxCountdownDigits" hidden><div><strong id="sxDays">00</strong><span>TAGE</span></div><div><strong id="sxHours">00</strong><span>STUNDEN</span></div><div><strong id="sxMinutes">00</strong><span>MINUTEN</span></div><div><strong id="sxSeconds">00</strong><span>SEKUNDEN</span></div></div><strong id="sxCountdownState">—</strong></div><span id="sxCountdownNote">Starttermine können sich ändern.</span></div>
         </div>
       </section>
       <section class="sx-card sx-calendar" aria-labelledby="sxCalendarHeading">
-        <h2 id="sxCalendarHeading"><span>02 · STARTKALENDER</span><span id="sxCount" class="sx-heading-end">00</span></h2>
-        <div class="sx-calendar-caption"><span>SPACEX · NÄCHSTE MISSIONEN</span><span>ZEIT IN WIEN</span></div>
+        <h2 id="sxCalendarHeading"><span>STARTKALENDER</span><span id="sxCount" class="sx-heading-end">00</span></h2>
+        <div class="sx-calendar-caption"><span>NÄCHSTE SPACEX-MISSIONEN</span><span>START · WIEN</span></div>
         <ol id="sxCalendar" aria-label="Kommende SpaceX-Missionen"></ol><p id="sxCalendarEmpty" class="sx-empty">Startkalender wird geladen …</p>
         <p class="sx-calendar-note">Mission wählen für Details und Übertragung.</p>
       </section>
       <section class="sx-card sx-telemetry" aria-labelledby="sxTelemetryHeading">
-        <h2 id="sxTelemetryHeading"><span>03 · STARSHIP-TELEMETRIE</span><span id="sxTelemetryState" class="sx-heading-end">KEIN SIGNAL</span></h2>
+        <h2 id="sxTelemetryHeading"><span>STARSHIP-TELEMETRIE</span><span id="sxTelemetryState" class="sx-heading-end">KEIN SIGNAL</span></h2>
         <div class="sx-telemetry-body">
-          <p class="sx-kicker">SPACEX · ÖFFENTLICHER STARSHIP-TRACKER</p><p id="sxTelemetryMission" class="sx-telemetry-mission">Keine aktive Starship-Telemetrie</p><select id="sxVehicle" aria-label="Starship-Telemetriefahrzeug auswählen" hidden></select>
-          <div class="sx-metrics"><div><span>HÖHE</span><strong id="sxAltitude">—</strong><small>km</small></div><div><span>GESCHWINDIGKEIT</span><strong id="sxSpeed">—</strong><small>km/h</small></div><div class="sx-mission-time"><span>MISSIONSZEIT</span><strong id="sxMissionTime">—</strong><small>gemessene Flugzeit</small></div></div>
+          <p id="sxTelemetryMission" class="sx-telemetry-mission">Keine aktive Starship-Telemetrie</p><select id="sxVehicle" aria-label="Starship-Telemetriefahrzeug auswählen" hidden></select>
+          <div class="sx-telemetry-console">
+            <svg class="sx-ship-diagram" viewBox="0 0 68 194" aria-hidden="true"><g fill="#081520" stroke="currentColor" stroke-width="1.3"><path d="M34 7C25 17 22 32 22 50V145L17 167V185H51V167L46 145V50C46 32 43 17 34 7Z"/><path d="M22 62L11 78V106L22 99M46 62L57 78V106L46 99M22 137L8 164V187L22 175M46 137L60 164V187L46 175"/><path d="M22 50H46M22 58H46M22 119H46M22 128H46M22 145H46M27 185V173H32V185M36 185V173H41V185"/><path d="M34 14V165" stroke-dasharray="3 4" opacity=".55"/></g><g fill="currentColor"><circle cx="34" cy="39" r="2"/><circle cx="34" cy="45" r="2"/></g></svg>
+            <div class="sx-metrics"><div><span>FLUGHÖHE</span><strong id="sxAltitude">—</strong><small>km</small></div><div><span>GESCHWINDIGKEIT</span><strong id="sxSpeed">—</strong><small>km/h</small></div><div class="sx-mission-time"><span>MISSIONSZEIT</span><strong id="sxMissionTime">—</strong><small>gemessen</small></div></div>
+          </div>
           <p id="sxTelemetryNote" class="sx-note">Keine bestätigten Messwerte verfügbar.</p><p id="sxTelemetrySource" class="sx-source-line">Messwerte erscheinen nur mit Quelle und frischem Zeitstempel.</p>
         </div>
       </section>
       <section class="sx-card sx-detail" aria-labelledby="sxDetailHeading">
-        <h2 id="sxDetailHeading"><span>04 · MISSIONSDATEN</span><select id="sxRecent" aria-label="Laufende oder kürzlich gestartete Mission auswählen" hidden></select></h2>
-        <div class="sx-detail-body"><h3 id="sxSelectedName">Keine Mission ausgewählt</h3><p id="sxSelectedTime" class="sx-selected-time">—</p><dl class="sx-detail-facts"><div><dt>RAKETE</dt><dd id="sxSelectedRocket">—</dd></div><div><dt>STARTORT</dt><dd id="sxSelectedPad">—</dd></div><div><dt>STATUS</dt><dd id="sxSelectedStatus">—</dd></div></dl><p id="sxDescription" class="sx-description">Der Startkalender liefert Missionsdetails, sobald die Datenquelle erreichbar ist.</p></div>
+        <h2 id="sxDetailHeading"><span>MISSIONSDETAILS</span><select id="sxRecent" aria-label="Laufende oder kürzlich gestartete Mission auswählen" hidden></select></h2>
+        <div class="sx-detail-body"><div id="sxSelectedSummary"><h3 id="sxSelectedName">Keine Mission ausgewählt</h3><p id="sxSelectedTime" class="sx-selected-time">—</p></div><dl id="sxSelectedExtraFacts" class="sx-detail-facts"><div><dt>RAKETE</dt><dd id="sxSelectedRocket">—</dd></div><div><dt>STARTORT</dt><dd id="sxSelectedPad">—</dd></div></dl><div class="sx-selected-status"><span>STATUS LAUT QUELLE</span><strong id="sxSelectedStatus">—</strong></div><p id="sxDescription" class="sx-description">Der Startkalender liefert Missionsdetails, sobald die Datenquelle erreichbar ist.</p></div>
       </section>
       <section class="sx-card sx-transmission" aria-labelledby="sxTransmissionHeading">
-        <h2 id="sxTransmissionHeading"><span>05 · ÜBERTRAGUNG</span><span class="sx-heading-end" aria-hidden="true">LINK</span></h2>
-        <div class="sx-transmission-body"><p id="sxStreamNote">Für diese Mission ist noch keine Übertragung hinterlegt.</p><button id="sxStream" type="button" disabled>MISSION-STREAM ÖFFNEN <span aria-hidden="true">↗</span></button><p class="sx-note">Öffnet die Übertragung im Browser. Startzeiten und Flugstatus sind keine Live-Telemetrie.</p><div class="sx-attribution"><span>STARTDATEN</span><button id="sxSource" type="button">The Space Devs · Launch Library 2 ↗</button></div></div>
+        <h2 id="sxTransmissionHeading"><span>OFFIZIELLER STREAM</span><span class="sx-heading-end" aria-hidden="true">↗</span></h2>
+        <div class="sx-transmission-body"><p id="sxStreamNote">Für diese Mission ist noch keine Übertragung hinterlegt.</p><button id="sxStream" type="button" disabled><span class="sx-play" aria-hidden="true">▶</span> MISSION-STREAM ÖFFNEN <span aria-hidden="true">↗</span></button><p class="sx-note">Übertragung im Browser. Starship-Messwerte stehen separat im Telemetriefeld.</p></div>
       </section>
     </div>
-    <footer class="sx-footer"><span>SPACEX · MISSION CONTROL</span><span id="sxFooterStatus">DATENQUELLE VERBINDEN</span><span>LCARS 05</span></footer>
+    <footer class="sx-footer"><span>SPACEX · MISSION CONTROL</span><span id="sxFooterStatus">DATENQUELLE VERBINDEN</span><button id="sxSource" type="button">The Space Devs · Launch Library 2 ↗</button></footer>
     <p id="sxAnnouncement" class="sx-sr-only" aria-live="polite" aria-atomic="true"></p>
   </div>`;
 document.body.append(dialog);
@@ -87,12 +94,16 @@ function countdownView(launch, now) {
   if (net <= now) return {value: '—', label: 'STARTZEIT ERREICHT', note: 'Warte auf bestätigten Startstatus. Kein Start aus der Uhrzeit abgeleitet.', mode: 'pending'};
   const remaining = Math.ceil((net - now) / 1000);
   const days = Math.floor(remaining / 86400), hours = Math.floor(remaining % 86400 / 3600), minutes = Math.floor(remaining % 3600 / 60), seconds = remaining % 60;
-  return {value: `${days ? days + 'd ' : ''}${pad(hours)}:${pad(minutes)}:${pad(seconds)}`, label: 'T− · GEPLANTER START', note: launch.precision === 'minute' ? 'Quelle nennt minutengenaue Startzeit · Änderungen möglich.' : 'Countdown zum veröffentlichten Termin · Änderungen möglich.', mode: 'countdown'};
+  return {value: `${days ? days + 'd ' : ''}${pad(hours)}:${pad(minutes)}:${pad(seconds)}`, label: 'T− · GEPLANTER START', note: launch.precision === 'minute' ? 'Quelle nennt minutengenaue Startzeit · Änderungen möglich.' : 'Countdown zum veröffentlichten Termin · Änderungen möglich.', mode: 'countdown', parts: {days, hours, minutes, seconds}};
 }
 
 function renderCountdown() {
   const view = countdownView(nextLaunch(), Date.now());
-  text('sxCountdown', view.value); text('sxCountdownLabel', view.label); text('sxCountdownNote', view.note);
+  text('sxCountdownLabel', view.label); text('sxCountdownNote', view.note);
+  const running = view.mode === 'countdown';
+  $('sxCountdownDigits').hidden = !running; $('sxCountdownState').hidden = running;
+  for (const [id, part] of [['sxDays', 'days'], ['sxHours', 'hours'], ['sxMinutes', 'minutes'], ['sxSeconds', 'seconds']]) text(id, pad(view.parts?.[part] ?? 0));
+  text('sxCountdownState', view.value);
   $('sxCountdown').dataset.mode = view.mode;
   $('sxCountdown').setAttribute('aria-label', `${view.label}: ${view.value}`);
 }
@@ -140,6 +151,8 @@ function renderCalendar() {
 
 function renderSelection() {
   const launch = selected();
+  const repeatsNext = Boolean(launch && launchId(launch) === launchId(nextLaunch()));
+  $('sxSelectedSummary').hidden = repeatsNext; $('sxSelectedExtraFacts').hidden = repeatsNext;
   $('sxRecent').value = recentLaunches.some(item => launchId(item) === selectedId) ? selectedId : '';
   text('sxSelectedName', launch?.name || 'Keine Mission ausgewählt'); text('sxSelectedTime', launch ? formatLaunchTime(launch) : '—'); text('sxSelectedRocket', launch?.rocket);
   text('sxSelectedPad', launch ? [launch.pad, launch.location].filter(Boolean).join(' · ') : null); text('sxSelectedStatus', launch ? statusName(launch) : '—');
@@ -179,7 +192,7 @@ function renderTelemetry() {
   text('sxMissionTime', live && measuredTime(seconds) ? `T${seconds < 0 ? '−' : '+'} ${pad(Math.floor(absolute / 3600))}:${pad(Math.floor(absolute % 3600 / 60))}:${pad(Math.floor(absolute % 60))}` : '—');
   text('sxTelemetryMission', sample ? `STARSHIP · ${sample.id}` : telemetryError ? 'Starship-Daten nicht verfügbar' : telemetryReceived ? 'Keine aktive Starship-Telemetrie' : 'Starship-Tracker wird geprüft');
   text('sxTelemetryState', live ? 'MESSWERTE' : sample && !available ? 'VERALTET' : 'KEIN SIGNAL'); $('sxTelemetryState').dataset.live = String(Boolean(live));
-  text('sxTelemetryNote', telemetryError || (live ? 'Messwerte aus dem SpaceX-Tracker. Dieser Starship-Flug ist unabhängig vom ausgewählten Kalenderstart.' : sample ? 'Keine frischen, gültigen Messwerte verfügbar. Werte bleiben bis zum nächsten bestätigten Datensatz ausgeblendet.' : telemetryReceived ? 'SpaceX meldet derzeit keine aktive Starship-Telemetrie. Für Falcon-Missionen steht hier kein öffentlicher Messdatenfeed bereit.' : 'Warte auf den öffentlichen SpaceX-Tracker. Messwerte werden nicht aus dem Startplan geschätzt.'));
+  text('sxTelemetryNote', telemetryError || (live ? 'Messwerte des Starship-Trackers; unabhängig von der gewählten Kalendermission.' : sample ? 'Keine frischen Messwerte. Die Anzeigen bleiben bis zum nächsten bestätigten Datensatz leer.' : telemetryReceived ? 'SpaceX meldet keine aktive Starship-Telemetrie. Für Falcon-Missionen: offizieller Stream.' : 'Warte auf den öffentlichen SpaceX-Tracker. Messwerte werden nicht aus dem Startplan geschätzt.'));
   text('sxTelemetrySource', Number.isFinite(sampleTime) ? `SpaceX Starship Tracker · ${new Date(sampleTime).toLocaleTimeString('de-AT', {timeZone: 'Europe/Vienna', hour: '2-digit', minute: '2-digit', second: '2-digit'})} Wien` : 'Quelle: SpaceX Starship Tracker · keine simulierten Messwerte');
 }
 

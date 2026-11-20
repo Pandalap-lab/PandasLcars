@@ -12,6 +12,12 @@ Spätere Installer aktualisieren denselben Ordner. Persönliche Daten bleiben un
 Microsoft Edge WebView2 Runtime wird benötigt. Falls sie fehlt, die offizielle
 Runtime installieren: https://developer.microsoft.com/microsoft-edge/webview2/
 
+## Update 0.6.16
+
+**SpaceX-Board im freigegebenen LCARS-Stil:** größere Schrift, vier Countdown-Felder, ein gekennzeichnetes NASA-Archivmotiv und markante orange/violette Rundrahmen. Die Missionsdetails ergänzen den nächsten Start ohne doppelte Fakten. Ausschließlich das SpaceX-Board wird gestalterisch überarbeitet. [Bedienung und Prüfungen](docs/release-0.6.16.md).
+
+Update über **UPDATES SUCHEN → 77852 · UPDATE LADEN** und die bisherige Installationsbestätigung.
+
 ## Update 0.6.15
 
 **05 DATA · SpaceX**: nächste Mission, Countdown, zehn kommende Starts in Wiener Ortszeit, Missionsdetails, offizielle Streams und Starship-Telemetrie. Der **Roadster** ist als kleines rotes Auto im Sonnensystem unten links anklickbar; NASA/JPL-Bahndaten funktionieren auch offline. [Bedienung, Quellen und Prüfgrenzen](docs/release-0.6.15.md).
@@ -26,7 +32,7 @@ Settings bietet Browserlinks zu Google Fotos, Outlook-Kalender und Facebook. Die
 
 GitHub Actions prüft Kernfunktionen und Zoom und erstellt Windows-x64-App,
 Installer, portable ZIP und SHA-256-Prüfsummen. Für den beauftragten Abschluss von
-**0.6.15** veröffentlicht der Workflow die noch nicht veröffentlichte Version nach
+**0.6.16** veröffentlicht der Workflow die noch nicht veröffentlichte Version nach
 einem Push auf main erst nach erfolgreicher Windows-, Oberflächen- und Upgrade-
 Abnahme. Der Release-Tag zeigt auf genau diesen geprüften Commit. Bereits
 veröffentlichte Versionen werden nicht überschrieben; unvollständige Releases
