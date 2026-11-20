@@ -1,7 +1,7 @@
 name: PandasLcars Windows
 on:
   push:
-    branches: [main]
+    branches: [main, 'feature/0.6.15-spacex-roadster']
     tags: ['v*']
   pull_request:
   workflow_dispatch:
@@ -20,6 +20,8 @@ jobs:
         run: dotnet run --project PandaLcarsTactical.Tests -c Release
       - name: Test EUMETSAT raw data and API security
         run: dotnet run --project PandaLcarsTactical.Lightning.Tests -c Release
+      - name: Test SpaceX module
+        run: node --test PandaLcarsTactical/Tests/spacex-mission.test.mjs PandaLcarsTactical/Tests/spacex-regression.test.mjs
       - name: Test zoom
         run: node PandaLcarsTactical.Tests/zoom.test.cjs
       - name: Test Earth rotation
