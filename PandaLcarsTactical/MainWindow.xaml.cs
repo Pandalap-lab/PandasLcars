@@ -358,8 +358,8 @@ public sealed partial class MainWindow : Window
                 targetPlace.Validate();
                 await OpenTacticalAsync(new LaunchLink("maps", "Google Maps", FormattableString.Invariant($"https://www.google.com/maps/search/?api=1&query={targetPlace.Latitude},{targetPlace.Longitude}"), false)); break;
             case "data":
-                if(!await ExternalWindows.LaunchAsync("explorer",()=>{System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe") { UseShellExecute = true });return Task.CompletedTask;}))
-                    Send(new {type="notice",message="Explorer geöffnet; Fensterposition bitte prüfen.",error=true});
+                // 0.6.15: SpaceX Mission Control is handled in the local WebView.
+                // The previous Explorer launch was explicitly retired.
                 break;
             case "photos": case "calendar":
                 var service = Settings.PersonalServices.Available.Single(s => s.Id == action);
