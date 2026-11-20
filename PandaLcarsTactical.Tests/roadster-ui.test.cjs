@@ -47,10 +47,17 @@ const fixture='<!doctype html><html lang="de"><head><meta charset="utf-8"><link 
  assert.ok((await page.evaluate(()=>pandaSolar.state.angles)).every(x=>x>0));
  fs.mkdirSync(path.resolve(__dirname,'../qa'),{recursive:true});
  await page.screenshot({path:path.resolve(__dirname,'../qa/roadster-1280.png')});
- await page.locator('#solarClose').click();assert.equal(await page.locator('#roadsterDetails').isVisible(),false);
+ await page.locator('#solarClose').click();
+ // The native close event is queued: wait for onclose to restore the panel
+ // before asserting focus, rather than racing dialog.close()'s open change.
+ await page.locator('#solarExpand').waitFor({state:'visible'});
+ assert.equal(await page.locator('#roadsterDetails').isVisible(),false);
  assert.equal(await page.evaluate(()=>document.activeElement.id),'solarExpand');
  await page.locator('#solarCanvas').press('r');assert.ok(await page.locator('#solarDialog').evaluate(e=>e.open));
- await page.keyboard.press('Escape');assert.equal(await page.locator('#solarDialog').evaluate(e=>e.open),false);
+ await page.keyboard.press('Escape');
+ await page.locator('#solarExpand').waitFor({state:'visible'});
+ assert.equal(await page.locator('#solarDialog').evaluate(e=>e.open),false);
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'solarExpand');
  await page.clock.setSystemTime(new Date('2033-01-01T12:00:00Z'));await page.reload();
  await page.locator('#solarExpand').click();
  assert.equal(await page.evaluate(()=>pandaSolar.state.roadster),null);
