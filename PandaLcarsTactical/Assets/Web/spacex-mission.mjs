@@ -48,3 +48,10 @@ export function upcomingLaunches(records, now = Date.now(), limit = 10) {
     .sort((a,b) => Date.parse(a.launchUtc)-Date.parse(b.launchUtc))
     .slice(0, Math.min(10, Math.max(5, limit)));
 }
+
+export function telemetryDisplay(sample, now = Date.now()) {
+  if (!sample || sample.verified !== true || !Number.isFinite(sample.timestamp) || now - sample.timestamp > 30000 || sample.timestamp > now + 5000) return {live:false,label:"Keine verifizierte Live-Telemetrie verfügbar"};
+  const altitude = Number(sample.altitudeKm), speed = Number(sample.speedKmh);
+  if (!Number.isFinite(altitude) || !Number.isFinite(speed) || altitude < 0 || speed < 0) return {live:false,label:"Telemetrie ungültig"};
+  return {live:true,label:`Höhe: ${altitude.toFixed(1)} km · Geschwindigkeit: ${speed.toFixed(0)} km/h`,timestamp:sample.timestamp};
+}
