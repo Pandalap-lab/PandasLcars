@@ -257,19 +257,37 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>{report=savedWeather;renderWeather();renderForecast();});
   console.log('PASS offline startup/reconnection refreshes weather, radar, map and updates once');
   // View the sun-facing meridian and its opposite, with the real clock/SunLight.
+  const waitForGlobeTiles=()=>page.evaluate(()=>new Promise((resolve,reject)=>{
+   // tilesLoaded can describe the previous view until rendering processes the
+   // camera/layer change. Require two completed frames with an empty tile queue.
+   let readyFrames=0;
+   const remove=viewer.scene.postRender.addEventListener(()=>{
+    readyFrames=viewer.scene.globe.tilesLoaded?readyFrames+1:0;
+    if(readyFrames===2){remove();clearTimeout(timeout);resolve();}
+    else viewer.scene.requestRender();
+   });
+   const timeout=setTimeout(()=>{remove();reject(new Error('Globe tiles did not settle within 60 seconds'));},60000);
+   viewer.scene.requestRender();
+  }));
   await page.evaluate(()=>{earthMotion.enabled=false;setEarthMode(true);viewer.camera.cancelFlight();stopSmoothZoom();viewer.scene.light=new Cesium.SunLight();const now=new Date();window.dayLon=180-(now.getUTCHours()+now.getUTCMinutes()/60)*15;viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(dayLon,0,26000000)});radarWanted=false;syncRadar();});
-  await page.waitForFunction(()=>viewer.scene.globe.tilesLoaded);
+  await waitForGlobeTiles();
   const brightness=()=>page.evaluate(()=>new Promise(resolve=>{const remove=viewer.scene.postRender.addEventListener(()=>{remove();const gl=viewer.scene.context._gl,pixels=new Uint8Array(32*32*4);gl.readPixels(Math.floor(gl.drawingBufferWidth/2)-16,Math.floor(gl.drawingBufferHeight/2)-16,32,32,gl.RGBA,gl.UNSIGNED_BYTE,pixels);let sum=0;for(let i=0;i<pixels.length;i+=4)sum+=pixels[i]+pixels[i+1]+pixels[i+2];resolve(sum/(32*32*3));});viewer.scene.requestRender();}));
   const dayBefore=await brightness();assert(dayBefore>30,'Sunlit hemisphere actually renders brightly');
-  await page.evaluate(async data=>{const image=new Image();image.src=data;await image.decode();window.originalRadarRequest=Cesium.UrlTemplateImageryProvider.prototype.requestImage;Cesium.UrlTemplateImageryProvider.prototype.requestImage=function(){return Promise.resolve(image);};radarWanted=true;showRadar({url:'https://radar-fixture.invalid/{z}/{x}/{y}.png',generatedAt:new Date().toISOString()});},'data:image/png;base64,'+fs.readFileSync(path.join(__dirname,'fixtures/radar-2026-10-07.png')).toString('base64'));
-  await page.waitForFunction(()=>viewer.scene.globe.tilesLoaded,null,{timeout:60000});
+  const radarFixture=fs.readFileSync(path.join(__dirname,'fixtures/radar-2026-10-07.png'));
+  let radarFixtureRequests=0;
+  // Serve only a test path on the CSP-allowed radar host. Replacing UrlTemplate's
+  // shared prototype also replaces Natural Earth/NASA tiles still loading.
+  await page.route('https://tilecache.rainviewer.com/__test_radar__/**',route=>{radarFixtureRequests++;return route.fulfill({status:200,contentType:'image/png',headers:{'Access-Control-Allow-Origin':'*'},body:radarFixture});});
+  await page.evaluate(()=>{radarWanted=true;showRadar({url:'https://tilecache.rainviewer.com/__test_radar__/{z}/{x}/{y}.png',generatedAt:new Date().toISOString()});});
+  await waitForGlobeTiles();
+  assert(radarFixtureRequests>0,'Radar fixture tiles actually loaded');
   const dayWithRadar=await brightness();assert(Math.abs(dayBefore-dayWithRadar)<5,'Radar does not darken the sunlit hemisphere: '+dayBefore+' vs '+dayWithRadar);
   await page.screenshot({path:path.resolve(__dirname,'../qa/radar-day.png')});
   await page.evaluate(()=>viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(dayLon+180,0,26000000)}));
-  await page.waitForFunction(()=>viewer.scene.globe.tilesLoaded,null,{timeout:60000});
+  await waitForGlobeTiles();
   const nightWithRadar=await brightness();assert(nightWithRadar<dayWithRadar*.6,'Night side remains darker independently of radar');
   await page.screenshot({path:path.resolve(__dirname,'../qa/radar-night.png')});
-  await page.evaluate(()=>{radarWanted=false;syncRadar();Cesium.UrlTemplateImageryProvider.prototype.requestImage=originalRadarRequest;viewer.scene.light=new Cesium.SunLight();setEarthMode(false);});
+  await page.evaluate(()=>{radarWanted=false;syncRadar();viewer.scene.light=new Cesium.SunLight();setEarthMode(false);});
   assert(!(await page.evaluate(()=>viewer.scene.globe.enableLighting||nightLayer.show)),'Radar removal preserves EARTH mode');
   console.log('PASS rendered pixels: daylight survives radar and night remains dark');
 
