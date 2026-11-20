@@ -1,0 +1,128 @@
+/* Every selector is scoped so the existing dashboard stays intact. */
+#spacexBoard{--sx-orange:#ffb45f;--sx-lavender:#beaceb;--sx-cyan:#8bdff5;--sx-muted:#9baabd;--sx-line:#253e51;background:#020507;color:#e5edf2;border:0;border-radius:28px 16px 16px 28px;padding:0;margin:auto;width:min(1220px,96vw);height:min(800px,94vh);max-width:96vw;max-height:94vh;overflow:hidden;font-family:PandaCondensed,"Arial Narrow","Segoe UI",sans-serif;font-size:14px;box-shadow:0 0 0 1px #beaceb55,0 18px 90px #000}
+#spacexBoard::backdrop{background:#000c;backdrop-filter:blur(3px)}
+#spacexBoard .sx-shell{height:100%;display:grid;grid-template-rows:76px 43px minmax(0,1fr) 30px;padding:0 14px 0 0;border-left:12px solid var(--sx-orange);gap:0}
+#spacexBoard .sx-header{display:flex;align-items:center;gap:18px;min-width:0;border-bottom:8px solid var(--sx-orange);margin-bottom:8px}
+#spacexBoard .sx-section-number{display:grid;align-self:stretch;place-items:center;flex:0 0 65px;background:var(--sx-orange);color:#090909;font-size:32px;font-weight:700;border-radius:0 0 22px 0;padding-right:6px}
+#spacexBoard .sx-heading{flex:1;min-width:0}
+#spacexBoard .sx-heading p{font-size:11px;letter-spacing:1.6px;color:var(--sx-lavender);margin:0}
+#spacexBoard h1{font-family:inherit;font-size:34px;letter-spacing:7px;line-height:1.05;color:var(--sx-orange);margin:2px 0 0}
+#spacexBoard .sx-header-time{display:flex;flex-direction:column;text-align:right;gap:2px;font-variant-numeric:tabular-nums}
+#spacexBoard .sx-header-time span{font-size:10px;letter-spacing:1px;color:var(--sx-muted)}
+#spacexBoard .sx-header-time time{font-size:24px;letter-spacing:2px;color:var(--sx-cyan)}
+#spacexBoard button{font:inherit;letter-spacing:.3px;border:0;border-radius:4px;min-height:32px;padding:5px 10px;transition:background .15s,color .15s}
+#spacexBoard button:focus-visible{outline:2px solid var(--sx-cyan);outline-offset:3px}
+#spacexBoard button:disabled{opacity:.5;cursor:default}
+#spacexBoard .sx-close{align-self:stretch;min-width:122px;border-radius:0 14px 0 0;background:var(--sx-lavender);color:#100b1b;font-size:16px;font-weight:700;margin:0 0 0 8px}
+#spacexBoard .sx-close span{margin-left:16px;font-size:21px}
+#spacexBoard .sx-close:hover{background:#d4c5f7}
+#spacexBoard .sx-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 9px 16px;min-width:0}
+#spacexBoard #sxDataStatus{font-family:"Segoe UI",sans-serif;font-size:11px;line-height:1.4;color:var(--sx-muted);min-width:0;margin:0;max-height:31px;overflow:auto}
+#spacexBoard #sxDataStatus:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--sx-muted);margin:0 7px 1px 0}
+#spacexBoard #sxDataStatus[data-state=fresh]:before{background:#83d9c0}
+#spacexBoard #sxDataStatus[data-state=error],#spacexBoard #sxDataStatus[data-state=stale]{color:#ffca8b}
+#spacexBoard #sxDataStatus[data-state=error]:before,#spacexBoard #sxDataStatus[data-state=stale]:before{background:var(--sx-orange)}
+#spacexBoard #sxRefresh{font-size:11px;background:#152536;color:var(--sx-cyan);min-height:27px;padding:4px 11px;flex-shrink:0}
+#spacexBoard #sxRefresh span{font-size:15px;margin-left:8px}
+#spacexBoard #sxRefresh:hover{background:#244157}
+#spacexBoard .sx-grid{padding-left:16px;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1.03fr) minmax(0,.9fr);grid-template-rows:minmax(280px,1.2fr) minmax(160px,1fr);gap:12px;min-width:0;min-height:0}
+#spacexBoard .sx-card{border:1px solid var(--sx-line);border-radius:16px 5px 5px 5px;min-width:0;min-height:0;overflow:hidden;background:#050b10;display:flex;flex-direction:column}
+#spacexBoard h2{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--sx-lavender);color:#120d1b;border-radius:14px 3px 3px 0;margin:0;padding:8px 11px;height:34px;min-height:34px;line-height:18px;font-family:inherit;font-size:13px;letter-spacing:.5px}
+#spacexBoard .sx-next h2,#spacexBoard .sx-detail h2{background:var(--sx-orange)}
+#spacexBoard .sx-heading-end{font-size:10px;letter-spacing:1.1px;white-space:nowrap;opacity:.8}
+#spacexBoard h3{font-family:inherit;font-size:22px;font-weight:600;line-height:1.2;color:#f0f4fa;margin:0;overflow-wrap:anywhere}
+#spacexBoard .sx-kicker{font-family:"Segoe UI",sans-serif;font-size:10px;font-weight:600;line-height:1.3;letter-spacing:1px;color:var(--sx-lavender);margin:0 0 7px}
+#spacexBoard .sx-next-body{padding:14px 15px;display:flex;flex-direction:column;flex:1;gap:0;min-height:0;overflow:auto}
+#spacexBoard .sx-next h3{font-size:26px;max-height:63px;overflow:auto;flex-shrink:0}
+#spacexBoard .sx-countdown-wrap{display:flex;flex-direction:column;margin:14px 0 11px;padding:12px 0 11px;border-top:1px solid var(--sx-line);border-bottom:1px solid var(--sx-line);gap:4px}
+#spacexBoard #sxCountdownLabel{color:var(--sx-lavender);font-size:10px;letter-spacing:1.1px}
+#spacexBoard #sxCountdown{color:var(--sx-cyan);font-family:PandaCondensed,"Arial Narrow","Segoe UI",sans-serif;font-size:39px;line-height:1.08;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500;letter-spacing:1px}
+#spacexBoard #sxCountdown:not([data-mode=countdown]){font-size:27px;color:var(--sx-orange);white-space:normal}
+#spacexBoard #sxCountdownNote{font-family:"Segoe UI",sans-serif;color:var(--sx-muted);font-size:10px;line-height:1.4}
+#spacexBoard dl{margin:0}
+#spacexBoard .sx-next-facts{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+#spacexBoard .sx-next-facts>div{display:grid;grid-template-columns:82px minmax(0,1fr);gap:8px;align-items:baseline}
+#spacexBoard dt{color:var(--sx-muted);font-size:10px;letter-spacing:.7px;margin:0}
+#spacexBoard dd{color:#d3e1ed;font-family:"Segoe UI",sans-serif;font-size:11px;line-height:1.35;margin:0;overflow-wrap:anywhere}
+#spacexBoard .sx-calendar{grid-column:2;grid-row:1/3}
+#spacexBoard .sx-calendar-caption{display:flex;justify-content:space-between;gap:4px;padding:10px 10px 7px;color:var(--sx-muted);font-size:9px;letter-spacing:.7px}
+#spacexBoard #sxCalendar{list-style:none;display:flex;flex-direction:column;gap:4px;margin:0;padding:0 8px;overflow:auto;min-height:0;flex:1;scrollbar-width:thin;scrollbar-color:#6e5e89 #07111a}
+#spacexBoard #sxCalendar li{min-height:0;flex:1 0 45px;margin:0;padding:0}
+#spacexBoard #sxCalendar button{display:flex;align-items:center;gap:11px;min-height:45px;height:100%;width:100%;padding:6px 9px;background:#0c1721;border:1px solid transparent;color:#d4e2eb;text-align:left;white-space:normal;border-radius:2px}
+#spacexBoard #sxCalendar button:hover{background:#182b3c}
+#spacexBoard #sxCalendar button[aria-pressed=true]{border-color:var(--sx-lavender);background:#241f34;color:white}
+#spacexBoard .sx-launch-number{color:var(--sx-lavender);font-size:20px;font-variant-numeric:tabular-nums;flex:0 0 24px}
+#spacexBoard .sx-launch-label{display:grid;gap:1px;min-width:0;flex:1}
+#spacexBoard .sx-launch-label strong{font-family:"Segoe UI",sans-serif;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:1.3;font-weight:600}
+#spacexBoard .sx-launch-label>span{font-size:11px;color:var(--sx-cyan);letter-spacing:.2px;line-height:1.2}
+#spacexBoard .sx-launch-label small{font-size:9px;color:var(--sx-muted);line-height:1.2}
+#spacexBoard .sx-calendar-note{color:var(--sx-muted);font-size:10px;line-height:1.4;padding:8px 10px;margin:0}
+#spacexBoard .sx-empty{font-family:"Segoe UI",sans-serif;font-size:12px;line-height:1.6;color:var(--sx-muted);margin:12px 16px;flex:1}
+#spacexBoard .sx-telemetry{grid-column:3;grid-row:1}
+#spacexBoard .sx-telemetry-body{padding:13px;overflow:auto;min-height:0;flex:1}
+#spacexBoard .sx-telemetry-mission{font-size:15px;line-height:1.2;color:#d3dceb;margin:0 0 14px;min-height:18px;overflow-wrap:anywhere}
+#spacexBoard #sxVehicle{font:inherit;background:#0e1d2a;color:var(--sx-cyan);border:1px solid var(--sx-line);border-radius:3px;width:100%;padding:3px 6px;margin:-5px 0 10px;min-height:27px}
+#spacexBoard .sx-metrics{display:grid;grid-template-columns:1fr 1fr;gap:11px 12px;margin:0 0 12px}
+#spacexBoard .sx-metrics>div{display:flex;flex-direction:column;min-width:0;border-bottom:1px solid var(--sx-line);padding-bottom:8px}
+#spacexBoard .sx-metrics span{color:var(--sx-muted);font-size:10px;letter-spacing:.8px}
+#spacexBoard .sx-metrics strong{font-family:PandaCondensed,"Arial Narrow",sans-serif;color:var(--sx-cyan);font-size:28px;font-weight:500;line-height:1.2;font-variant-numeric:tabular-nums}
+#spacexBoard .sx-metrics small{color:#8f99a7;font-size:10px}
+#spacexBoard .sx-metrics .sx-mission-time{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px}
+#spacexBoard .sx-mission-time strong{font-size:22px}
+#spacexBoard .sx-mission-time small{grid-column:1/-1}
+#spacexBoard .sx-note,#spacexBoard .sx-source-line{font-family:"Segoe UI",sans-serif;font-size:10px;line-height:1.5;color:var(--sx-muted);margin:0}
+#spacexBoard .sx-source-line{margin-top:8px;color:#8499ac;font-size:9px}
+#spacexBoard #sxTelemetryState[data-live=true]{opacity:1;font-weight:700}
+#spacexBoard .sx-detail{grid-column:1;grid-row:2}
+#spacexBoard .sx-detail-body{padding:12px 15px;min-height:0;overflow:auto}
+#spacexBoard .sx-detail h3{font-size:17px}
+#spacexBoard #sxRecent{font:inherit;font-size:10px;max-width:46%;min-width:0;min-height:23px;border:0;border-radius:3px;padding:2px 4px;background:#332319;color:#ffdbaf;text-overflow:ellipsis}
+#spacexBoard .sx-selected-time{color:var(--sx-cyan);font-size:12px;line-height:1.4;margin:5px 0 10px}
+#spacexBoard .sx-detail-facts{display:flex;flex-direction:column;gap:5px}
+#spacexBoard .sx-detail-facts>div{display:grid;grid-template-columns:59px minmax(0,1fr);gap:8px;align-items:baseline}
+#spacexBoard .sx-description{font-family:"Segoe UI",sans-serif;font-size:10px;line-height:1.5;color:#aebfcd;margin:10px 0 0;padding-top:9px;border-top:1px solid var(--sx-line)}
+#spacexBoard .sx-transmission{grid-column:3;grid-row:2}
+#spacexBoard .sx-transmission-body{padding:13px;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:12px;flex:1}
+#spacexBoard #sxStreamNote{font-family:"Segoe UI",sans-serif;font-size:11px;line-height:1.4;color:#d3dfed;margin:0}
+#spacexBoard #sxStream{background:var(--sx-lavender);color:#100b1b;font-size:12px;min-height:38px;width:100%;white-space:normal;font-weight:600}
+#spacexBoard #sxStream span{margin-left:5px}
+#spacexBoard #sxStream:hover:not(:disabled){background:#d4c5f7}
+#spacexBoard .sx-attribution{border-top:1px solid var(--sx-line);padding-top:10px;margin-top:auto;display:flex;flex-direction:column;gap:3px}
+#spacexBoard .sx-attribution>span{font-size:9px;letter-spacing:1px;color:var(--sx-muted)}
+#spacexBoard #sxSource{font-size:11px;text-align:left;background:transparent;color:var(--sx-cyan);padding:0;min-height:24px;white-space:normal;letter-spacing:0}
+#spacexBoard #sxSource:hover{text-decoration:underline}
+#spacexBoard .sx-footer{border:0;background:transparent;grid-column:auto;grid-row:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;min-width:0;padding:5px 0 0 16px;border-radius:0;font-size:9px;letter-spacing:1px;color:var(--sx-lavender)}
+#spacexBoard .sx-footer>span:first-child{color:var(--sx-orange)}
+#spacexBoard .sx-footer>span:nth-child(2){color:var(--sx-muted);text-align:center;font-size:8px;letter-spacing:.6px}
+#spacexBoard .sx-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-height:760px){
+ #spacexBoard .sx-shell{grid-template-rows:67px 38px minmax(0,1fr) 27px}
+ #spacexBoard .sx-grid{grid-template-rows:minmax(267px,1.2fr) minmax(150px,1fr);gap:10px}
+ #spacexBoard .sx-next-body{padding:11px 13px}
+ #spacexBoard .sx-next h3{font-size:22px;max-height:53px}
+ #spacexBoard .sx-countdown-wrap{margin:10px 0 9px;padding:9px 0}
+ #spacexBoard .sx-next-facts{gap:6px}
+ #spacexBoard #sxCountdown{font-size:36px}
+ #spacexBoard .sx-telemetry-body{padding:11px}
+ #spacexBoard .sx-telemetry .sx-kicker{display:none}
+ #spacexBoard .sx-telemetry-mission{margin-bottom:10px}
+ #spacexBoard .sx-metrics{gap:8px 12px;margin-bottom:9px}
+ #spacexBoard .sx-transmission-body{padding:11px;gap:9px}
+ #spacexBoard .sx-calendar-caption{padding:7px 10px 5px}
+ #spacexBoard #sxCalendar{gap:3px}
+ #spacexBoard #sxCalendar li{flex-basis:43px}
+ #spacexBoard #sxCalendar button{min-height:43px;padding:4px 8px}
+ #spacexBoard .sx-launch-label small{display:none}
+ #spacexBoard .sx-calendar-note{padding:6px 10px}
+}
+@media(max-width:1080px){
+ #spacexBoard .sx-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto auto;overflow:auto;padding-bottom:4px}
+ #spacexBoard .sx-calendar{grid-column:2;grid-row:1/3;min-height:500px}
+ #spacexBoard .sx-next{grid-column:1;grid-row:1;min-height:300px}
+ #spacexBoard .sx-detail{grid-column:1;grid-row:2;min-height:200px}
+ #spacexBoard .sx-telemetry{grid-column:1;grid-row:3;min-height:280px}
+ #spacexBoard .sx-transmission{grid-column:2;grid-row:3;min-height:230px}
+ #spacexBoard .sx-header-time{display:none}
+ #spacexBoard .sx-footer>span:nth-child(2){display:none}
+}
+@media(prefers-reduced-motion:reduce){#spacexBoard button{transition:none}}

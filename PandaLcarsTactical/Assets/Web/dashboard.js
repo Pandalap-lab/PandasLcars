@@ -55,14 +55,14 @@ function drawArtwork(){
    svg.append(cover);
   }
   if (host.classList.contains("navigation")) {
-   for (const [y,color,title,subtitle] of [[281,"#ed789a","WEB","PANDAs"],[476,"#a68be9","COMMUNICATION","CALENDAR"]]) {
+   for (const [y,color,title,subtitle] of [[281,"#ed789a","WEB","PANDAs"],[346,"#9990ef","DATA","SpaceX"],[476,"#a68be9","COMMUNICATION","CALENDAR"]]) {
     const cover=document.createElementNS(svg.namespaceURI,"rect");
     for(const [k,v] of Object.entries({x:72,y:y-7,width:166,height:59,rx:5,fill:color})) cover.setAttribute(k,v);
     svg.append(cover);
     for(const [offset,text,size] of [[22,title,23],[41,subtitle,14]]) {
      const label=document.createElementNS(svg.namespaceURI,"text");
      // Match the narrow lettering of the adjacent labels in the reference artwork.
-     for(const [k,v] of Object.entries({x:83,y:y+offset,fill:"black","font-family":"PandaCondensed, sans-serif","font-size":size,"font-weight":offset===22?700:400,textLength:offset===22?(title==="WEB"?31:132):(title==="WEB"?43:60),lengthAdjust:"spacingAndGlyphs"})) label.setAttribute(k,v);
+     for(const [k,v] of Object.entries({x:83,y:y+offset,fill:"black","font-family":"PandaCondensed, sans-serif","font-size":size,"font-weight":offset===22?700:400,textLength:offset===22?(title==="WEB"?31:title==="DATA"?38:132):(title==="WEB"?43:title==="DATA"?48:60),lengthAdjust:"spacingAndGlyphs"})) label.setAttribute(k,v);
      label.textContent=text; svg.append(label);
     }
    }

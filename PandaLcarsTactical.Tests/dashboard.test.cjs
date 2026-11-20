@@ -4,7 +4,7 @@ const assets=process.env.PANDA_ASSETS_ROOT?path.resolve(process.env.PANDA_ASSETS
 const server=http.createServer((req,res)=>{
  const file=path.resolve(assets,'.'+decodeURIComponent(req.url.split('?')[0]));
  if(!file.startsWith(assets+path.sep)){res.writeHead(403).end();return;}
- const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.wasm':'application/wasm'};
+ const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.wasm':'application/wasm'};
  res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');
  fs.createReadStream(file).on('error',()=>res.end()).pipe(res);
 });
@@ -131,10 +131,15 @@ const server=http.createServer((req,res)=>{
   await page.locator('#lightningOpen').click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='lightning'&&x.place.name==='Wien')));
   console.log('PASS EARTH lighting, target mode and external lightning request');
-  for(const action of ['tactical','system','maps','web','data','photos','calendar','desktop','power']) {
+  for(const action of ['tactical','system','maps','web','photos','calendar','desktop','power']) {
    await page.locator('[data-action="'+action+'"]').click();
    assert(await page.evaluate(action=>testSent.some(x=>x.type==='menu'&&x.action===action),action));
   }
+  await page.locator('[data-action="data"]').click();
+  assert(await page.locator('#spacexBoard').evaluate(e=>e.open));
+  assert(await page.evaluate(()=>testSent.some(x=>x.type==='spacexLaunches')));
+  assert(!(await page.evaluate(()=>testSent.some(x=>x.type==='menu'&&x.action==='data'))));
+  await page.locator('#sxClose').click();
   await page.locator('#updateCheck').click();
   assert(await page.evaluate(()=>testSent.some(x=>x.type==='updateCheck')));
   await page.evaluate(()=>testMessage({type:'update',state:'available',message:'UPDATE v0.6.1 VORHANDEN'}));

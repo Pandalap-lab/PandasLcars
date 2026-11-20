@@ -12,6 +12,12 @@ Spätere Installer aktualisieren denselben Ordner. Persönliche Daten bleiben un
 Microsoft Edge WebView2 Runtime wird benötigt. Falls sie fehlt, die offizielle
 Runtime installieren: https://developer.microsoft.com/microsoft-edge/webview2/
 
+## Update 0.6.15
+
+**05 DATA · SpaceX**: nächste Mission, Countdown, zehn kommende Starts in Wiener Ortszeit, Missionsdetails, offizielle Streams und Starship-Telemetrie. Der **Roadster** ist als kleines rotes Auto im Sonnensystem unten links anklickbar; NASA/JPL-Bahndaten funktionieren auch offline. [Bedienung, Quellen und Prüfgrenzen](docs/release-0.6.15.md).
+
+Update über **UPDATES SUCHEN → 77852 · UPDATE LADEN** und die bisherige Installationsbestätigung.
+
 ## Persönliche Dienste
 
 Settings bietet Browserlinks zu Google Fotos, Outlook-Kalender und Facebook. Die Dienste öffnen sich bevorzugt in Firefox und verwenden die dort vorhandene Anmeldung. PandasLcars zeigt keinen Kontostatus und benötigt keine OAuth-Appregistrierungen oder Client-IDs. Kontoverknüpfungen sind auf Nutzerwunsch entfallen.
@@ -46,7 +52,7 @@ werden mit deren SHA-256-Prüfsumme verglichen. Das schützt vor Übertragungsfe
 ersetzt aber keine digitale Herausgeber-Signatur. Installation erfolgt erst nach
 Bestätigung; das Setup kann von Windows oder Virenschutz blockiert werden.
 
-Navigation: 02 Windows-Einstellungen, 03 Google Maps im Tactical-Browser, 05 Explorer,
+Navigation: 02 Windows-Einstellungen, 03 Google Maps im Tactical-Browser, 05 SpaceX-Missionskontrolle,
 06 Google Fotos und 07 Outlook-Kalender im persönlichen Browser, 08 Desktop,
 09 App-Settings, 10 Neustart/Herunterfahren mit Bestätigung. Es werden keine
 persönlichen E-Mail-Adressen vorgegeben; der Browser verwendet das angemeldete Konto.

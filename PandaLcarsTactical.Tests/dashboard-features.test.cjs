@@ -12,7 +12,7 @@ fs.mkdirSync(path.resolve(__dirname,'../qa'),{recursive:true});
    let relative=decodeURIComponent(u.pathname).replace(/^\//,'');
    let file=path.join(base,relative);
    if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
-   return route.fulfill({contentType:({'.js':'text/javascript','.css':'text/css','.html':'text/html','.jpg':'image/jpeg','.png':'image/png','.json':'application/json','.wasm':'application/wasm','.svg':'image/svg+xml','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});
+   return route.fulfill({contentType:({'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.html':'text/html','.jpg':'image/jpeg','.png':'image/png','.json':'application/json','.wasm':'application/wasm','.svg':'image/svg+xml','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});
   }
   if(u.hostname==='warnungen.zamg.at'){
    warningQueries.push(u.search);if(live)return route.continue();

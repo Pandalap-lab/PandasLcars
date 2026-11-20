@@ -20,8 +20,10 @@ jobs:
         run: dotnet run --project PandaLcarsTactical.Tests -c Release
       - name: Test EUMETSAT raw data and API security
         run: dotnet run --project PandaLcarsTactical.Lightning.Tests -c Release
+      - name: Test SpaceX native data and telemetry
+        run: dotnet run --project PandaLcarsTactical.SpaceX.Tests -c Release
       - name: Test SpaceX module
-        run: node --test PandaLcarsTactical/Tests/spacex-mission.test.mjs PandaLcarsTactical/Tests/spacex-regression.test.mjs
+        run: node --test PandaLcarsTactical/Tests/spacex-mission.test.mjs PandaLcarsTactical/Tests/spacex-regression.test.mjs PandaLcarsTactical.Tests/roadster.test.cjs
       - name: Test zoom
         run: node PandaLcarsTactical.Tests/zoom.test.cjs
       - name: Test Earth rotation
@@ -40,6 +42,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Feature UI tests failed' }
           node PandaLcarsTactical.Tests/iss-review.test.cjs
           if ($LASTEXITCODE -ne 0) { throw 'ISS review tests failed' }
+          node PandaLcarsTactical.Tests/spacex-board.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'SpaceX board tests failed' }
+          node PandaLcarsTactical.Tests/roadster-ui.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Roadster UI tests failed' }
       - name: Save UI test evidence
         if: failure()
         uses: actions/upload-artifact@v4
@@ -59,6 +65,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Published feature tests failed' }
           node PandaLcarsTactical.Tests/iss-review.test.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Published ISS tests failed' }
+          node PandaLcarsTactical.Tests/spacex-board.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Published SpaceX tests failed' }
+          node PandaLcarsTactical.Tests/roadster-ui.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Published Roadster tests failed' }
       - name: Preserve successful visual evidence
         uses: actions/upload-artifact@v4
         with:
@@ -77,17 +87,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
           Compress-Archive artifacts/app/* artifacts/PandasLcars-Windows-x64.zip
           Get-FileHash artifacts/PandasLcars-Setup.exe,artifacts/PandasLcars-Windows-x64.zip -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } | Set-Content artifacts/SHA256SUMS.txt
-      - name: Get 0.6.13 source for upgrade test
+      - name: Get 0.6.14 source for upgrade test
         uses: actions/checkout@v4
         with:
-          ref: v0.6.13
+          ref: v0.6.14
           path: upgrade-baseline
       - name: Build previous installer
         shell: pwsh
         run: |
           dotnet publish upgrade-baseline/PandaLcarsTactical/PandaLcarsTactical.csproj -c Release -p:Platform=x64 -o upgrade-baseline/artifacts/app
           if ($LASTEXITCODE -ne 0) { throw 'Baseline build failed' }
-          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" /DAppVersion=0.6.13 upgrade-baseline/installer/PandasLcars.iss
+          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" /DAppVersion=0.6.14 upgrade-baseline/installer/PandasLcars.iss
           if ($LASTEXITCODE -ne 0) { throw 'Baseline installer failed' }
       - name: Test installation, upgrade and uninstall on clean runner
         shell: pwsh
@@ -111,7 +121,7 @@ jobs:
           $baseline = (Resolve-Path upgrade-baseline/artifacts/PandasLcars-Setup.exe).Path
           $initial = Start-Process -FilePath $baseline -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-' -WindowStyle Hidden -Wait -PassThru
           if ($initial.ExitCode -ne 0) { throw 'Baseline install failed' }
-          if ((Get-Item (Join-Path $appDir 'PandasLcars.exe')).VersionInfo.FileVersion -ne '0.6.13.0') { throw 'Baseline version mismatch' }
+          if ((Get-Item (Join-Path $appDir 'PandasLcars.exe')).VersionInfo.FileVersion -ne '0.6.14.0') { throw 'Baseline version mismatch' }
           $setup = (Resolve-Path artifacts/PandasLcars-Setup.exe).Path
           foreach ($attempt in 1..2) {
             $process = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/TASKS=autostart' -WindowStyle Hidden -Wait -PassThru

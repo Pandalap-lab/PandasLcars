@@ -186,6 +186,9 @@ public sealed partial class MainWindow : Window
                     display.Save(monitorId == "auto" ? null : monitorId, message.GetProperty("fullscreen").GetBoolean());
                     displayTimer.Stop(); PlaceOnMonitor(); SendDisplay(); break;
                 case "menu": await OpenMenuAsync(message.GetProperty("action").GetString() ?? "", message); break;
+                case "spacexLaunches": await SendSpaceXLaunchesAsync(message); break;
+                case "spacexTelemetry": await SendStarshipTelemetryAsync(message); break;
+                case "spacexOpenLink": await OpenSpaceXLinkAsync(message); break;
                 case "eumetsatSettings": await ShowEumetsatAsync(); break;
                 case "lightningData":
                     try { var frame = await (lightningClient ??= new Lightning.EumetsatClient(eumetsatKeys.Read)).GetAsync(lifetime.Token); Send(new { type = "lightningData", data = frame }); }

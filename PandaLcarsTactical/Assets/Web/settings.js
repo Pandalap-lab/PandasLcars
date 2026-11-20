@@ -7,6 +7,7 @@
  for (const button of document.querySelectorAll("[data-action]")) {
   button.title = button.getAttribute("aria-label");
   button.onclick = () => {
+   if (button.dataset.action === "data") { document.dispatchEvent(new Event("panda-open-spacex")); return; }
    send("menu", {action:button.dataset.action, place});
   };
  }

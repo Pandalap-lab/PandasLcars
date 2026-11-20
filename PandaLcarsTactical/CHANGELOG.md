@@ -1,3 +1,7 @@
+# PandasLcars 0.6.15
+
+05 DATA öffnet die SpaceX-Missionskontrolle mit Startkalender, Wiener Ortszeit, geplantem Countdown, Status, offiziellen Streams und echter Starship-Feed-Anbindung. Tesla Roadster als anklickbares rotes Auto im Sonnensystem mit offline berechneten NASA/JPL-Ephemeriden. Datenalter, Ausfälle und fehlende Messwerte sind ausdrücklich erkennbar. Update weiterhin über UPDATES SUCHEN und 77852 · UPDATE LADEN. Details: docs/release-0.6.15.md.
+
 # PandasLcars 0.6.14
 
 Targetbezogene Wiener Warnungen, kompakte Umweltkachel und schneller Sahara-Ortswert; separates Mondfenster, Titel-Panda, verbesserter Verbindungsstatus und räumliche ISS bei unveränderter Größe. Siehe docs/release-0.6.14.md.

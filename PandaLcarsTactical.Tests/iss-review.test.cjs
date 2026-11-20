@@ -10,7 +10,7 @@ fs.mkdirSync(path.resolve(__dirname,'../qa'),{recursive:true});
   const relative=decodeURIComponent(u.pathname).replace(/^\//,'');
   const file=path.join(base,relative);
   if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
-  return route.fulfill({contentType:({'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.jpg':'image/jpeg','.json':'application/json','.svg':'image/svg+xml','.wasm':'application/wasm','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});
+  return route.fulfill({contentType:({'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.jpg':'image/jpeg','.json':'application/json','.svg':'image/svg+xml','.wasm':'application/wasm','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});
  });
  await page.addInitScript(()=>{
   const handlers=[];window.testMessage=data=>handlers.forEach(fn=>fn({data}));window.sent=[];
