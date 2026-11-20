@@ -20,17 +20,17 @@ function tick(){const c=selected?countdown(selected.launchUtc):null;el("sxCountd
 async function load(){
  el("sxUpdated").textContent="Datenabruf läuft …";
  try{
-  const response=await fetch("https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=20&mode=detailed",{signal:AbortSignal.timeout(12000)});
+  const response=await fetch("https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=100&mode=detailed",{signal:AbortSignal.timeout(12000)});
   if(!response.ok)throw Error("HTTP "+response.status);
   const data=await response.json();
-  const parsed=(data.results??[]).filter(x=>/spacex/i.test(JSON.stringify(x.launch_service_provider?.name??""))).map(x=>({
+  const parsed=(data.results??[]).filter(x=>/spacex/i.test(String(x.launch_service_provider?.name??""))).map(x=>({
    id:x.id,name:x.name,rocket:x.rocket?.configuration?.full_name??"Unbekannte Rakete",
    pad:[x.pad?.name,x.pad?.location?.name].filter(Boolean).join(", "),
    launchUtc:x.net,status:x.status?.name??"Geplant",
    streamUrl:(x.vidURLs??[]).map(v=>v.url).find(u=>{try{return new URL(u).protocol==="https:"}catch{return false}})??null
   })).filter(x=>Number.isFinite(Date.parse(x.launchUtc))).sort((a,b)=>Date.parse(a.launchUtc)-Date.parse(b.launchUtc)).slice(0,10);
   launches=parsed;selected=launches.find(x=>x.id===selected?.id)??launches[0]??null;loadedAt=Date.now();
-  el("sxUpdated").textContent="Letzter erfolgreicher Abruf: "+new Date(loadedAt).toLocaleString("de-AT",{timeZone:"Europe/Vienna"})+" · Wien";
+  el("sxUpdated").textContent=(launches.length<5?"Weniger als fünf SpaceX-Starts im abgefragten Datenfenster · ":"")+"Letzter erfolgreicher Abruf: "+new Date(loadedAt).toLocaleString("de-AT",{timeZone:"Europe/Vienna"})+" · Wien";
  }catch(err){el("sxUpdated").textContent="Abruf fehlgeschlagen: "+err.message+(loadedAt?" · Vorherige Daten können veraltet sein":"");}
  render();
 }
