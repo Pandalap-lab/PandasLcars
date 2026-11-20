@@ -25,10 +25,14 @@ Settings bietet Browserlinks zu Google Fotos, Outlook-Kalender und Facebook. Die
 ## Build
 
 GitHub Actions prüft Kernfunktionen und Zoom und erstellt Windows-x64-App,
-Installer, portable ZIP und SHA-256-Prüfsummen. Push auf `main` erzeugt ein
-Build-Artefakt. Ein Tag passend zur Projektversion, z. B. `v0.6.2`, veröffentlicht
-nach erfolgreichem Build einen Release. Dafür ist kein persönlicher Token im
-Quellcode nötig. Die Dateien sind derzeit **nicht Authenticode-signiert**.
+Installer, portable ZIP und SHA-256-Prüfsummen. Für den beauftragten Abschluss von
+**0.6.15** veröffentlicht der Workflow die noch nicht veröffentlichte Version nach
+einem Push auf main erst nach erfolgreicher Windows-, Oberflächen- und Upgrade-
+Abnahme. Der Release-Tag zeigt auf genau diesen geprüften Commit. Bereits
+veröffentlichte Versionen werden nicht überschrieben; unvollständige Releases
+stoppen die Veröffentlichung. Andere Versionen nutzen wie bisher einen manuell
+gesetzten Tag passend zur Projektversion. Entwicklungsbranches veröffentlichen
+nichts. Dafür ist kein persönlicher Token im Quellcode nötig. Die Dateien sind derzeit **nicht Authenticode-signiert**.
 
 Lokale Entwicklung: .NET 8 SDK und Windows, `dotnet publish
 PandaLcarsTactical/PandaLcarsTactical.csproj -c Release -p:Platform=x64`.

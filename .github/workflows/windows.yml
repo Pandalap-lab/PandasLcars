@@ -34,6 +34,10 @@ jobs:
           npm install --prefix "$env:RUNNER_TEMP/pandas-ui" --ignore-scripts --no-package-lock playwright@1.62.1
           if ($LASTEXITCODE -ne 0) { throw 'UI test dependency installation failed' }
           $env:PLAYWRIGHT_MODULE = "$env:RUNNER_TEMP/pandas-ui/node_modules/playwright"
+          node PandaLcarsTactical.Tests/spacex-board.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'SpaceX board tests failed' }
+          node PandaLcarsTactical.Tests/roadster-ui.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Roadster UI tests failed' }
           node PandaLcarsTactical.Tests/dashboard.test.cjs
           if ($LASTEXITCODE -ne 0) { throw 'UI tests failed' }
           node PandaLcarsTactical.Tests/weather-alerts.test.cjs
@@ -42,10 +46,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Feature UI tests failed' }
           node PandaLcarsTactical.Tests/iss-review.test.cjs
           if ($LASTEXITCODE -ne 0) { throw 'ISS review tests failed' }
-          node PandaLcarsTactical.Tests/spacex-board.test.cjs
-          if ($LASTEXITCODE -ne 0) { throw 'SpaceX board tests failed' }
-          node PandaLcarsTactical.Tests/roadster-ui.test.cjs
-          if ($LASTEXITCODE -ne 0) { throw 'Roadster UI tests failed' }
       - name: Save UI test evidence
         if: failure()
         uses: actions/upload-artifact@v4
@@ -152,8 +152,11 @@ jobs:
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: windows
+    concurrency:
+      group: PandasLcars-stable-release
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -167,5 +170,40 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" artifacts/* --verify-tag --title "PandasLcars $TAG" --notes-file "docs/release-${TAG#v}.md"
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(python3 -c "import xml.etree.ElementTree as E; print(E.parse('PandaLcarsTactical/PandaLcarsTactical.csproj').findtext('PropertyGroup/Version'))")
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid release version'; exit 1; }
+          TAG="v$VERSION"
+          # Completion of the explicitly requested 0.6.15 release. Other
+          # versions retain the existing manual-tag publication path.
+          if [ "$REF_TYPE" != tag ] && [ "$VERSION" != '0.6.15' ]; then
+            echo 'Build only: this version requires its normal release tag.'
+            exit 0
+          fi
+          if [ "$REF_TYPE" = tag ] && [ "$REF_NAME" != "$TAG" ]; then echo 'Tag/version mismatch'; exit 1; fi
+          test -f "docs/release-$VERSION.md"
+          (cd artifacts && sha256sum --check SHA256SUMS.txt)
+          # A main push with an already released version is a normal build. Never
+          # replace published binaries, and never turn a draft into a live update.
+          if gh release view "$TAG" --json isDraft,isPrerelease,assets > existing-release.json; then
+            python3 -c "import json; r=json.load(open('existing-release.json')); assert not r['isDraft'] and not r['isPrerelease'], 'Existing release needs explicit review'; assert {'PandasLcars-Setup.exe','PandasLcars-Windows-x64.zip','SHA256SUMS.txt'} <= {a['name'] for a in r['assets'] if a.get('size',0)>0}, 'Existing release assets incomplete'"
+            echo "$TAG already published; no release changes."
+            exit 0
+          fi
+          if [ "$REF_TYPE" != tag ]; then
+            # All Windows, UI, installer and upgrade gates have already passed.
+            # Create the exact tested main commit's tag using the existing scoped
+            # release token. No personal credentials or new permissions required.
+            if gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq '.object.sha' > existing-tag.txt 2>/dev/null; then
+              git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"
+              test "$(git rev-parse "$TAG^{commit}")" = "$RELEASE_COMMIT" || { echo 'Existing tag points to another commit'; exit 1; }
+            else
+              gh api "repos/$GH_REPO/git/refs" --method POST -f "ref=refs/tags/$TAG" -f "sha=$RELEASE_COMMIT" > /dev/null
+            fi
+          fi
+          gh release create "$TAG" artifacts/* --verify-tag --title "PandasLcars $TAG" --notes-file "docs/release-$VERSION.md"

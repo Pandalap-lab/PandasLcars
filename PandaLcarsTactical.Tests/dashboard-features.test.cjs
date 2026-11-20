@@ -60,7 +60,7 @@ fs.mkdirSync(path.resolve(__dirname,'../qa'),{recursive:true});
  await page.waitForTimeout(100);assert.equal(await page.locator('.alert-state').textContent(),'Keine Daten · außerhalb Wien');assert.ok(!await page.locator('.alert-scale i').isVisible());
  await page.evaluate(()=>selectPlace(vienna));await page.waitForFunction(()=>document.querySelector('.alert-state').textContent==='Keine aktive Warnung');
  for(const [width,height] of [[1920,1080],[1504,776],[1366,768],[1280,720],[1024,768]]){
-  await page.setViewportSize({width,height});const sizes=await page.evaluate(()=>{const tile=document.querySelector('.dust-panel'),foot=document.querySelector('footer'),moon=document.querySelector('#lunarStatus');return {scroll:tile.scrollHeight,client:tile.clientHeight,footer:foot.getBoundingClientRect().bottom,moonBottom:moon.getBoundingClientRect().bottom,weatherBottom:document.querySelector('.weather-dock').getBoundingClientRect().bottom};});
+  await page.setViewportSize({width,height});const sizes=await page.evaluate(()=>{const tile=document.querySelector('.dust-panel'),foot=document.querySelector('.dashboard > footer'),moon=document.querySelector('#lunarStatus');return {scroll:tile.scrollHeight,client:tile.clientHeight,footer:foot.getBoundingClientRect().bottom,moonBottom:moon.getBoundingClientRect().bottom,weatherBottom:document.querySelector('.weather-dock').getBoundingClientRect().bottom};});
   assert.ok(sizes.footer<=height+1,JSON.stringify(sizes));assert.ok(sizes.moonBottom<=sizes.weatherBottom+1,JSON.stringify(sizes));
   if(width>=1280)assert.ok(sizes.scroll<=sizes.client+2,'Compact tile should fit: '+JSON.stringify(sizes));
  }

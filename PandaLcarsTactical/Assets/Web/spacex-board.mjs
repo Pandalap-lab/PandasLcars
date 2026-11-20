@@ -177,7 +177,7 @@ function renderTelemetry() {
   text('sxAltitude', format(sample?.altitudeKm, 1)); text('sxSpeed', format(sample?.speedKmh, 0));
   const seconds = sample?.missionTimeSeconds, absolute = Math.abs(seconds);
   text('sxMissionTime', live && measuredTime(seconds) ? `T${seconds < 0 ? '−' : '+'} ${pad(Math.floor(absolute / 3600))}:${pad(Math.floor(absolute % 3600 / 60))}:${pad(Math.floor(absolute % 60))}` : '—');
-  text('sxTelemetryMission', sample ? `STARSHIP · ${sample.id}` : telemetryReceived ? 'Keine aktive Starship-Telemetrie' : 'Starship-Tracker wird geprüft');
+  text('sxTelemetryMission', sample ? `STARSHIP · ${sample.id}` : telemetryError ? 'Starship-Daten nicht verfügbar' : telemetryReceived ? 'Keine aktive Starship-Telemetrie' : 'Starship-Tracker wird geprüft');
   text('sxTelemetryState', live ? 'MESSWERTE' : sample && !available ? 'VERALTET' : 'KEIN SIGNAL'); $('sxTelemetryState').dataset.live = String(Boolean(live));
   text('sxTelemetryNote', telemetryError || (live ? 'Messwerte aus dem SpaceX-Tracker. Dieser Starship-Flug ist unabhängig vom ausgewählten Kalenderstart.' : sample ? 'Keine frischen, gültigen Messwerte verfügbar. Werte bleiben bis zum nächsten bestätigten Datensatz ausgeblendet.' : telemetryReceived ? 'SpaceX meldet derzeit keine aktive Starship-Telemetrie. Für Falcon-Missionen steht hier kein öffentlicher Messdatenfeed bereit.' : 'Warte auf den öffentlichen SpaceX-Tracker. Messwerte werden nicht aus dem Startplan geschätzt.'));
   text('sxTelemetrySource', Number.isFinite(sampleTime) ? `SpaceX Starship Tracker · ${new Date(sampleTime).toLocaleTimeString('de-AT', {timeZone: 'Europe/Vienna', hour: '2-digit', minute: '2-digit', second: '2-digit'})} Wien` : 'Quelle: SpaceX Starship Tracker · keine simulierten Messwerte');

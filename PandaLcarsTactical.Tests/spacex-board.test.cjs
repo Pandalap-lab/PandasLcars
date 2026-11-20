@@ -60,6 +60,11 @@ const launches = Array.from({length: 10}, (_, i) => ({
   assert.equal(await page.locator('#sxAltitude').textContent(), '—');
   assert.equal(await page.locator('#sxMissionTime').textContent(), '—');
   assert.match(await page.locator('#sxTelemetryNote').textContent(), /keine aktive Starship-Telemetrie/);
+  await advance(16_000);
+  await telemetryReply({vehicles:[],error:'SpaceX-Telemetrie nicht erreichbar',stale:true});
+  assert.match(await page.locator('#sxTelemetryMission').textContent(), /nicht verfügbar/);
+  assert.doesNotMatch(await page.locator('#sxTelemetryMission').textContent(), /Keine aktive/);
+  assert.match(await page.locator('#sxTelemetryNote').textContent(), /nicht erreichbar/);
   await page.locator('#sxCalendar button').nth(1).click();
   assert.equal(await page.locator('#sxSelectedName').textContent(), launches[1].name);
   assert.equal(await page.locator('#sxNextName').textContent(), launches[0].name, 'Selecting another launch must not replace NEXT');

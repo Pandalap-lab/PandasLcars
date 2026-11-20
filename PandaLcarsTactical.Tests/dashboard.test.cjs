@@ -340,7 +340,7 @@ const server=http.createServer((req,res)=>{
   const touchPage=await touch.newPage();
   await touchPage.goto('http://127.0.0.1:'+server.address().port+'/Web/index.html');
   await touchPage.waitForSelector('#waterOpen');
-  const touchBounds=await touchPage.locator('.quick').boundingBox(),footerBounds=await touchPage.locator('footer').boundingBox();
+  const touchBounds=await touchPage.locator('.quick').boundingBox(),footerBounds=await touchPage.locator('.dashboard > footer').boundingBox();
   assert(touchBounds.y+touchBounds.height<=footerBounds.y);console.log('PASS compact touch layout avoids footer overlap');
   await touch.close();
   if(process.env.PANDA_ASSETS_ROOT)console.log('PASS second pass against published build assets: '+assets);
