@@ -11,6 +11,8 @@
 
 Im **Sonnensystem unten links** fliegt der Tesla Roadster als kleines rotes Auto. Ein Klick auf das Auto, **R** im Sonnensystem oder die Vergrößerung öffnet berechnete Geschwindigkeit, Entfernung zur Sonne und Erde, Koordinaten und Quelle. Acht Planeten und CENTER/X/Y/Z bleiben erhalten. **03 Navigation** bleibt Google Maps.
 
+Der schnelle Wechsel von **CENTER zu EARTH** wurde ebenfalls korrigiert: Ein noch laufender Kameraflug wird vor dem neuen Flug beendet, damit dessen Abbruch die neue Erdansicht und ihre Tag-/Nachtbeleuchtung nicht wieder ausschalten kann.
+
 ## Quellen und Grenzen
 
 **Startplanung:** [The Space Devs – Launch Library 2](https://thespacedevs.com/llapi), Version 2.3.0, SpaceX-Anbieterfilter 121. Native HTTP-Anbindung, persistenter Cache und mindestens fünf Minuten Abrufabstand; HTTP 429/Retry-After wird berücksichtigt. Abfragen nur bei geöffnetem Board. Ausfälle überschreiben die letzte brauchbare Planung nicht; der Stand wird als veraltet gekennzeichnet. Die alte r-spacex-API und LL2 2.2.0 sind keine Produktionsdatenquellen. LL2 ist eine Community-Datenbank; Starttermine können sich kurzfristig ändern.

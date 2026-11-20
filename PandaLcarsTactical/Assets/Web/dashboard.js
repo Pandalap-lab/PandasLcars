@@ -124,6 +124,8 @@ function fly(height){
  if(!viewer)return;
  stopSmoothZoom();
  if(tracking){tracking=false;viewer.trackedEntity=undefined;pressed("track",false);}
+ // Cancel first: the previous flight's callback must not clear the new guard.
+ viewer.camera.cancelFlight();
  earthFlight=true;
  viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude,height),orientation:{heading:0,pitch:-Cesium.Math.PI_OVER_TWO,roll:0},duration:1.5,complete:()=>{earthFlight=false;},cancel:()=>{earthFlight=false;}});
 }

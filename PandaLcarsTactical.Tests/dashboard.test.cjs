@@ -93,7 +93,18 @@ const server=http.createServer((req,res)=>{
   await page.locator('#earth').click();
   assert(await page.evaluate(()=>earthMotion.enabled&&earthMotion.resumeAt<=performance.now()&&document.querySelector('#earth').getAttribute('aria-pressed')==='true'&&document.querySelector('#earthRotation').checked&&localStorage.getItem('panda.earthRotation')==='true'));
   console.log('PASS EARTH button stops and restarts rotation; settings and persistence synchronized');
-  await page.waitForTimeout(1700);
+  // A valid rapid CENTER -> EARTH change replaces an unfinished camera flight.
+  // Its old cancel callback must not disable the new flight's zoom-mode guard.
+  const replacedFlight=await page.evaluate(()=>{
+   viewer.camera.cancelFlight();stopSmoothZoom();
+   viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(place.longitude,place.latitude,800000)});
+   document.querySelector('#center').click();document.querySelector('#earth').click();
+   updateZoomEarthMode(viewer.camera.positionCartographic.height);
+   return {inFlight:earthFlight,earth:earthMotion.earth,lighting:viewer.scene.globe.enableLighting,night:nightLayer.show};
+  });
+  assert.deepEqual(replacedFlight,{inFlight:true,earth:true,lighting:true,night:true});
+  await page.waitForFunction(()=>!earthFlight,null,{timeout:10000});
+  console.log('PASS rapid CENTER to EARTH preserves lighting throughout the replacement flight');
   await page.evaluate(()=>setEarthRotation(false));
   for(let round=0;round<2;round++) {
    await page.evaluate(()=>beginSmoothZoom(2200000));await page.waitForFunction(()=>zoomTarget===null);assert.equal(await page.evaluate(()=>earthMotion.earth),false);
